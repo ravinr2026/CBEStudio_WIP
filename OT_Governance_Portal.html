@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Capacity Recovery &amp; OT Approval Portal</title>
+<style>
+  :root{--brand:#003B3B;--brand-dark:#002A2A;--gold:#CCAE35;--gold-bright:#F2D64B;--ink:#151c20;--muted:#5b6773;--bg:#f4f6f8;--card:#fff;--line:#e2e8ec;--section-bg:#eef4f4;--section-line:#d4e2e2;--green:#12a150;--amber:#e69500;--red:#d93636;--warn:#b25e00;--warn-bg:#fff1dd;--green-bg:#e7f7ee;--amber-bg:#fdf3e2;--red-bg:#fde8e8;--info:#2563eb;--info-bg:#e8f0ff;--shadow:0 4px 18px rgba(16,24,40,.08);--gap-col:22px;--gap-row:16px;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  /* ===== LOGIN (username / password) ===== */
+  #login{position:fixed;inset:0;background:linear-gradient(120deg,var(--brand-dark),var(--brand));display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #login .box{background:#fff;border-radius:16px;padding:34px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  #login h1{margin:0 0 4px;font-size:22px;color:var(--brand-dark);}
+  #login p{margin:0 0 18px;color:var(--muted);font-size:13px;}
+  #login label{font-size:12.5px;font-weight:600;display:block;margin:12px 0 5px;color:var(--ink);}
+  #login input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;font-size:14px;color:var(--ink);}
+  #login .pw-row{position:relative;}
+  #login .pw-row button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-weight:600;}
+  #login .signin{margin-top:20px;width:100%;background:var(--brand);color:#fff;border:none;padding:13px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
+  #login .signin:hover{background:var(--brand-dark);}
+  #login .remember{display:flex;align-items:center;gap:7px;margin-top:12px;font-size:12px;color:var(--muted);}
+  #login .remember input{width:auto;}
+  #loginErr{display:none;margin-top:12px;background:var(--red-bg);color:var(--red);border:1px solid #f2b8b8;border-radius:9px;padding:10px 12px;font-size:12.5px;font-weight:600;}
+  #login .hint{margin-top:14px;font-size:11px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px;}
+
+  header.top{background:linear-gradient(120deg,var(--brand-dark),var(--brand));color:var(--gold);padding:14px 24px;box-shadow:var(--shadow);position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  header.top h1{margin:0;font-size:18px;color:var(--gold);}
+  header.top p{margin:2px 0 0;font-size:12px;color:var(--gold);opacity:.92;}
+  .whoami{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.22);border:1px solid rgba(242,214,75,.55);border-radius:12px;padding:7px 10px 7px 14px;}
+  .whoami .who-text{text-align:right;line-height:1.25;}
+  .whoami .who-name{display:block;font-size:15px;font-weight:800;color:var(--gold-bright);}
+  .whoami .who-sub{display:block;font-size:11.5px;font-weight:600;color:#fff;opacity:.9;}
+  .mode-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:.4px;}
+  .mode-badge.prod{background:#e7f7ee;color:#0e5c3a;} .mode-badge.dev{background:#fff1dd;color:#b25e00;}
+  .whoami button{background:var(--gold-bright);color:var(--brand-dark);border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;}
+  nav.tabs{display:flex;gap:4px;background:var(--card);padding:8px 18px;border-bottom:1px solid var(--line);position:sticky;top:58px;z-index:40;flex-wrap:wrap;}
+  nav.tabs button{border:none;background:transparent;padding:9px 14px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);}
+  nav.tabs button.active{background:var(--brand);color:#fff;} nav.tabs button.hide{display:none;}
+  main{max-width:1240px;margin:20px auto;padding:0 16px 60px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:18px;box-shadow:var(--shadow);}
+  .card h2{margin:0 0 4px;font-size:16px;color:var(--ink);} .sub{color:var(--muted);font-size:12.5px;margin:0 0 8px;}
+  .stage-header{grid-column:1 / -1;background:linear-gradient(90deg,rgba(0,59,59,.10),rgba(0,59,59,.03));border:1px solid var(--section-line);border-left:6px solid var(--brand);border-radius:10px;padding:14px 18px;margin:0;}
+  .stage-header.gap{margin-top:30px;} .stage-header h2{margin:0;font-size:15.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--brand-dark);}
+  .stage-header .stage-sub{margin:4px 0 0;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;}
+  .form-section{margin-top:22px;} .form-section:first-of-type{margin-top:16px;}
+  .section-header{grid-column:1 / -1;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12.5px;font-weight:800;color:var(--brand-dark);text-transform:uppercase;letter-spacing:.6px;padding:8px 12px;margin:0 0 14px;background:var(--section-bg);border-left:4px solid var(--brand);border-radius:8px;}
+  .section-header .sh-note{font-size:11px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;}
+  .section-plain .section-header{margin-bottom:12px;}
+  .subhead{font-size:11.5px;font-weight:700;color:var(--brand-dark);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 10px;padding-bottom:5px;border-bottom:1px dashed var(--section-line);}
+  #questionSections .qgrid{margin-top:22px;} #questionSections .qgrid:first-child{margin-top:16px;}
+  #questionSections h3{grid-column:1 / -1;padding:8px 12px;margin:0 0 14px;background:var(--section-bg);border-left:4px solid var(--brand);border-radius:8px;font-size:12.5px;font-weight:800;color:var(--brand-dark);text-transform:uppercase;letter-spacing:.6px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap-row) var(--gap-col);align-items:start;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) var(--gap-col);align-items:start;}
+  label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#33414b;}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;background:#fbfdfe;color:var(--ink);height:38px;}
+  textarea{min-height:70px;height:auto;resize:vertical;}
+  input:focus,select:focus,textarea:focus{outline:2px solid #99c4c4;border-color:var(--brand);}
+  input[readonly]{background:#e8f0f0;font-weight:700;} select:disabled{background:#eef2f2;color:#9aa8ad;cursor:not-allowed;}
+  .date-range{display:flex;align-items:center;gap:6px;} .date-range input{flex:1;min-width:0;} .date-range .dr-arrow{color:var(--muted);font-weight:700;}
+  .yn{display:flex;align-items:center;gap:28px;margin-top:6px;}
+  .yn label{display:inline-flex;align-items:center;gap:6px;flex:none;margin:0;border:none;background:none;height:34px;font-weight:500;font-size:13px;cursor:pointer;}
+  .yn input[type=radio]{appearance:none;-webkit-appearance:none;width:16px;height:16px;min-width:16px;margin:0;border:2px solid #8fa2ab;border-radius:50%;background:#fff;cursor:pointer;position:relative;}
+  .yn input[type=radio]:checked{border-color:var(--brand);} .yn input[type=radio]:checked::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:var(--brand);}
+  .req::after{content:" *";color:var(--red);}
+  .abs-warn{display:inline-flex;align-items:center;gap:4px;color:var(--red);font-weight:800;font-size:11.5px;margin-top:6px;}
+  .qitem.calc input.abs-red{color:var(--red)!important;background:#fdecec!important;border-color:#f2b8b8!important;}
+  .util-tbl{width:100%;max-width:520px;border-collapse:collapse;font-size:12.5px;margin-top:6px;}
+  .util-tbl thead th{background:#eef4f4;color:var(--muted);text-transform:uppercase;font-size:10px;text-align:left;padding:6px 8px;border:1px solid var(--line);}
+  .util-tbl td{border:1px solid var(--line);padding:5px 8px;}
+  .util-tbl td.dt input{background:#e8f0f0;font-weight:700;width:130px;height:30px;text-align:left;padding:2px 8px;}
+  .util-tbl td .u-in{width:86px;height:30px;text-align:center;} .util-tbl td .pct{color:var(--muted);margin-left:5px;font-weight:600;}
+  .util-tbl tr.avg td{background:#eef8f2;font-weight:800;color:#0e5c3a;text-transform:uppercase;} .util-tbl tr.avg td .u-in{background:#cfe8dd;color:#0e5c3a;font-weight:800;}
+  .btn{border:none;border-radius:9px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .btn.primary{background:var(--brand);color:#fff;} .btn.primary:hover{background:var(--brand-dark);}
+  .btn.ghost{background:#e5efef;color:var(--brand-dark);} .btn.danger{background:var(--red-bg);color:var(--red);} .btn.warn{background:var(--warn-bg);color:var(--warn);}
+  .btn.sm{padding:6px 11px;font-size:12px;} .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .row-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center;grid-column:1 / -1;}
+  .banner{padding:11px 15px;border-radius:10px;font-weight:700;font-size:13.5px;margin-top:12px;display:none;}
+  .banner.ok{background:var(--green-bg);color:var(--green);display:block;} .banner.warn{background:var(--red-bg);color:var(--red);display:block;}
+  .edit-banner{background:var(--warn-bg);color:var(--warn);border:1px solid #f4d29b;border-radius:10px;padding:11px 15px;font-weight:700;font-size:13.5px;margin:14px 0 0;}
+  .grid-scroll{overflow-x:auto;border:1px solid var(--section-line);border-radius:10px;}
+  table.xlgrid{border-collapse:collapse;width:100%;font-size:12px;background:#fff;table-layout:fixed;}
+  table.xlgrid th,table.xlgrid td{border:1px solid var(--line);padding:4px 3px;text-align:center;white-space:nowrap;}
+  table.xlgrid thead .parent th{background:#e1eded;color:var(--brand-dark);font-weight:800;text-transform:uppercase;font-size:9.5px;line-height:1.2;white-space:normal;vertical-align:middle;}
+  table.xlgrid thead .subrow th{background:#eef4f4;color:var(--muted);font-weight:700;font-size:9px;text-transform:uppercase;white-space:normal;line-height:1.2;}
+  table.xlgrid td input{width:100%;text-align:center;height:32px;padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12px;}
+  table.xlgrid td.calc-cell{background:#f4faf6;} table.xlgrid td.calc-cell input[readonly]{background:#eef7ef;color:#12603a;}
+  table.xlgrid .grp-total th{background:#d9ede4;color:#0e5c3a;} table.xlgrid td.grp-total{background:#eef8f2;} table.xlgrid td.grp-total input[readonly]{background:#cfe8dd;color:#0e5c3a;font-weight:800;}
+  table.xlgrid col.c-day{width:8.6%;} table.xlgrid col.c-tot{width:7%;} table.xlgrid col.c-sub{width:8.2%;} table.xlgrid col.c-one{width:12.7%;}
+  .lbl-wkdy{display:none;} body.mode-weekday .lbl-wknd{display:none;} body.mode-weekday .lbl-wkdy{display:inline;} body.mode-weekday .col-day3{display:none;}
+  .mode-note{font-size:11px;color:var(--muted);margin:6px 2px 0;}
+  .ot-req-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap-row) var(--gap-col);margin-top:10px;} .ot-req-grid .emph input{background:#dff0ea;color:#0e5c3a;font-weight:800;}
+  .ot-split{margin-top:14px;border:1px dashed var(--section-line);border-radius:8px;padding:10px 14px;background:#f7fbfb;max-width:420px;}
+  .ot-split .ot-split-title{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px;}
+  .ot-split .ot-split-row{display:flex;align-items:baseline;gap:6px;font-size:13px;padding:3px 0;}
+  .ot-split .lbl{width:78px;font-weight:700;} .ot-split .hrs{font-weight:800;color:#0e5c3a;min-width:56px;text-align:right;} .ot-split .unit{color:var(--muted);font-size:12px;} .ot-split .sep{color:#9aa8ad;margin:0 4px;} .ot-split .pctv{font-weight:800;min-width:64px;text-align:right;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow);}
+  .kpi .n{font-size:24px;font-weight:800;} .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  table.dt{width:100%;border-collapse:collapse;font-size:12.5px;} table.dt th,table.dt td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.dt th{background:#edf3f3;font-size:10.5px;text-transform:uppercase;color:var(--muted);position:sticky;top:0;} table.dt tr:hover td{background:#f5fafa;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+  .pill.green{background:var(--green-bg);color:var(--green);} .pill.amber{background:var(--amber-bg);color:var(--amber);} .pill.red{background:var(--red-bg);color:var(--red);} .pill.grey{background:#eef1f3;color:#555;} .pill.tomod{background:var(--warn-bg);color:var(--warn);}
+  .rpill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase;}
+  .rpill.Low{background:var(--green-bg);color:var(--green);} .rpill.Moderate{background:var(--amber-bg);color:var(--amber);} .rpill.High{background:#fde7e0;color:#c1440e;} .rpill.Critical{background:var(--red-bg);color:var(--red);}
+  .muted{color:var(--muted);font-size:12px;}
+  .declaration{display:flex;gap:10px;align-items:flex-start;background:#fbf6e4;border:1px solid #ecdfac;border-radius:10px;padding:13px;margin-top:6px;grid-column:1 / -1;} .declaration input{width:auto;height:auto;margin-top:3px;}
+  .modal-bg{position:fixed;inset:0;background:rgba(6,20,20,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .modal{background:#fff;border-radius:14px;max-width:860px;width:100%;max-height:90vh;overflow:auto;padding:22px;}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px;} .toolbar>div{display:flex;flex-direction:column;} .toolbar input,.toolbar select{width:auto;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;font-size:12.5px;margin-top:6px;} .detail-grid div{padding:5px 0;border-bottom:1px dashed var(--line);} .detail-grid b{color:var(--muted);font-weight:600;display:block;font-size:10.5px;text-transform:uppercase;}
+  .modal h3{margin:18px 0 8px;font-size:12.5px;font-weight:800;color:var(--brand-dark);text-transform:uppercase;border-left:3px solid var(--brand);padding-left:8px;}
+  .empty{text-align:center;padding:36px;color:var(--muted);}
+  .bars .bar-row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12px;} .bars .lbl{width:170px;flex-shrink:0;} .bars .track{flex:1;background:#e8f0f0;border-radius:6px;overflow:hidden;height:15px;} .bars .track>i{display:block;height:100%;background:var(--brand);} .bars .val{width:90px;text-align:right;font-weight:700;}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) var(--gap-col);align-items:start;} .qitem{min-width:0;} .qitem.qfull{grid-column:1 / -1;} .qitem label.qq{font-weight:600;font-size:12.5px;} .qitem.calc input{background:#eef7ef;font-weight:700;color:#12603a;}
+  .rev-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;flex-wrap:wrap;} .rev-row .acts{display:flex;gap:6px;flex-wrap:wrap;}
+  .rev-intel{flex:1;min-width:260px;} .ri-metrics{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;margin:6px 0;}
+  .rec-box{border:1px solid var(--section-line);border-left:4px solid var(--brand);border-radius:8px;background:#f4faf9;padding:10px 12px;margin-top:8px;font-size:12.5px;} .rec-box .rl{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--brand-dark);} .rec-box .ra{font-weight:800;color:#0e5c3a;font-size:13.5px;margin:2px 0;}
+  .alert-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;} .alert{font-size:12px;border-radius:8px;padding:7px 10px;border:1px solid var(--line);}
+  .alert.Info{background:var(--info-bg);color:#1e3a8a;} .alert.Warning{background:var(--amber-bg);color:#8a5a00;} .alert.High{background:#fde7e0;color:#9a3d10;} .alert.Critical{background:var(--red-bg);color:#a11;}
+  footer{text-align:center;color:var(--muted);font-size:11.5px;padding:16px;}
+  .chip{font-size:11px;padding:3px 8px;border-radius:14px;background:rgba(204,174,53,.2);color:var(--gold);}
+  @media(max-width:1000px){.grid-3{grid-template-columns:1fr 1fr;}.ot-req-grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:760px){.grid,.qgrid,.grid-3,.ot-req-grid{grid-template-columns:1fr;}.detail-grid{grid-template-columns:1fr;}.card{padding:18px 16px;}table.xlgrid{table-layout:auto;}}
+</style>
+</head>
+<body>
+
+<!-- ===== USERNAME / PASSWORD LOGIN ===== -->
+<div id="login">
+  <div class="box">
+    <h1>⚙️ OT Approval Portal</h1>
+    <p>Capacity Recovery &amp; OT Governance — Cell 1. Please sign in.</p>
+    <form id="loginForm" autocomplete="on">
+      <label for="loginUser">Username</label>
+      <input id="loginUser" type="text" placeholder="e.g. rahul" autocomplete="username" autofocus>
+      <label for="loginPass">Password</label>
+      <div class="pw-row">
+        <input id="loginPass" type="password" placeholder="Your password" autocomplete="current-password">
+        <button type="button" id="pwToggle">Show</button>
+      </div>
+      <label class="remember"><input type="checkbox" id="loginRemember"> Keep me signed in on this device</label>
+      <button type="submit" class="signin">Sign in →</button>
+    </form>
+    <div id="loginErr"></div>
+    <div class="hint" id="loginHint"></div>
+  </div>
+</div>
+
+<header class="top" id="appHeader" style="display:none">
+  <div>
+    <h1>⚙️ Capacity Recovery &amp; OT Approval Portal</h1>
+    <p>Username sign-in · <span id="storeInfo">local storage</span> <span class="chip" id="backendChip">…</span></p>
+  </div>
+  <div class="whoami">
+    <div class="who-text"><span class="who-name" id="waName">—</span><span class="who-sub" id="waSub">—</span></div>
+    <span class="mode-badge" id="modeBadge">…</span>
+    <button id="signOutBtn">Sign out</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs" style="display:none">
+  <button data-tab="request" data-perm="create">➕ New Request</button>
+  <button data-tab="dashboard" data-perm="dashboard">📋 Dashboard</button>
+  <button data-tab="review" data-perm="review">✅ 3:30 PM Review</button>
+  <button data-tab="osl" data-perm="osl">🏛️ OSL Summary</button>
+  <button data-tab="analytics" data-perm="analytics">📊 OT Health</button>
+  <button data-tab="settings" data-perm="dashboard">⚙️ Settings</button>
+</nav>
+
+<main id="appMain" style="display:none">
+  <!-- REQUEST -->
+  <section id="tab-request" style="display:none">
+    <form id="otForm">
+      <div class="card">
+        <div class="stage-header"><h2>Stage 1 — OT Request</h2><p class="stage-sub">Volume &amp; Capacity grids and calculations. Calculated cells are read-only.</p></div>
+        <div id="editBanner" class="edit-banner" style="display:none"></div>
+        <section class="form-section"><div class="grid-3">
+          <div class="section-header">Request Details</div>
+          <div><label class="req">Date – OT Requested</label><input type="date" name="dateRequested" id="dateRequested" required></div>
+          <div><label class="req">Date - OT Planned</label><div class="date-range"><input type="date" name="otPlannedStartDate" id="otPlannedStart" required><span class="dr-arrow">→</span><input type="date" name="otPlannedEndDate" id="otPlannedEnd" required></div></div>
+          <div><label class="req">Cell</label><select name="cell" required><option value="">Select</option><option>Cell-1</option><option>Cell-2</option><option>Cell-3</option><option>Cell-4</option></select></div>
+          <div><label class="req">Account</label><input name="account" placeholder="e.g. Conagra" required></div>
+          <div><label class="req">PM Name</label><input name="pmName" id="pmNameField" placeholder="Project Manager" required></div>
+          <div><label class="req">OT Type</label><select name="otType" id="otType" required><option value="">Select</option><option>Weekday OT</option><option>Weekend OT</option><option>Combine both Weekdays and Weekend</option></select></div>
+        </div></section>
+        <section class="form-section section-plain">
+          <div class="section-header">Volume Grid — Count &amp; Hours <span class="sh-note">Totals auto-calculate</span></div>
+          <div class="grid-scroll"><table class="xlgrid" id="volGrid"><colgroup><col class="c-day"><col class="c-day"><col class="c-day"><col class="c-day"><col class="c-day"><col class="c-day"><col class="c-day col-day3"><col class="c-day col-day3"><col class="c-day"><col class="c-day"><col class="c-tot"><col class="c-tot"></colgroup>
+            <thead><tr class="parent"><th colspan="2">Backlog</th><th colspan="2"><span class="lbl-wknd">Day 1</span><span class="lbl-wkdy">Today</span></th><th colspan="2"><span class="lbl-wknd">Day 2</span><span class="lbl-wkdy">Tomorrow</span></th><th colspan="2" class="col-day3">Day 3</th><th colspan="2">Future</th><th rowspan="2" class="grp-total">Total Job<br>Count</th><th rowspan="2" class="grp-total">Total Hrs.<br>Req</th></tr>
+            <tr class="subrow"><th>Count</th><th>Hours</th><th>Count</th><th>Hours</th><th>Count</th><th>Hours</th><th class="col-day3">Count</th><th class="col-day3">Hours</th><th>Count</th><th>Hours</th></tr></thead>
+            <tbody><tr>
+              <td><input type="number" step="1" name="backlogCount" class="calc" value="0"></td><td><input type="number" step="0.1" name="backlogHrs" class="calc" value="0"></td>
+              <td><input type="number" step="1" name="day1Count" class="calc" value="0"></td><td><input type="number" step="0.1" name="day1Hrs" class="calc" value="0"></td>
+              <td><input type="number" step="1" name="day2Count" class="calc" value="0"></td><td><input type="number" step="0.1" name="day2Hrs" class="calc" value="0"></td>
+              <td class="col-day3"><input type="number" step="1" name="day3Count" class="calc" value="0"></td><td class="col-day3"><input type="number" step="0.1" name="day3Hrs" class="calc" value="0"></td>
+              <td><input type="number" step="1" name="futureCount" class="calc" value="0"></td><td><input type="number" step="0.1" name="futureHrs" class="calc" value="0"></td>
+              <td class="grp-total"><input id="totalJobCount" name="totalJobCount" readonly></td><td class="grp-total"><input id="totalHrsReq" name="totalHrsReq" readonly></td>
+            </tr></tbody></table></div>
+          <p class="mode-note"><span class="lbl-wknd">Weekend / Combined layout: Backlog · Day 1 · Day 2 · Day 3 · Future.</span><span class="lbl-wkdy">Weekday layout: Backlog · Today · Tomorrow · Future.</span></p>
+        </section>
+        <section class="form-section section-plain">
+          <div class="section-header">Capacity Details <span class="sh-note">Capacity → Available → Cap vs. Available → Additional Hrs → OT Hrs → Comp Off</span></div>
+          <div class="grid-scroll"><table class="xlgrid" id="capGrid"><colgroup><col class="c-sub"><col class="c-sub"><col class="c-sub"><col class="c-sub"><col class="c-sub"><col class="c-sub"><col class="c-one"><col class="c-one"><col class="c-one"><col class="c-one"></colgroup>
+            <thead><tr class="parent"><th colspan="2">Capacity Per Day</th><th colspan="2">Capacity (3 Days)</th><th colspan="2">Cross Utilization Capa</th><th rowspan="2">Capacity Vs.<br>Available</th><th rowspan="2">Additional Hrs.<br>Required</th><th rowspan="2">OT Hrs.<br>Required</th><th rowspan="2">Comp Off Hours<br>Planned</th></tr>
+            <tr class="subrow"><th>Prod Hrs.</th><th>QC Hrs.</th><th>Prod Hrs.</th><th>QC Hrs.</th><th>Prod Hrs.<br>(D1+D2)</th><th>QC Hrs.<br>(D1+D2)</th></tr></thead>
+            <tbody><tr>
+              <td><input type="number" step="0.1" name="prodPerDay" class="calc" value="0"></td><td><input type="number" step="0.1" name="qcPerDay" class="calc" value="0"></td>
+              <td class="calc-cell"><input id="prod3day" readonly></td><td class="calc-cell"><input id="qc3day" readonly></td>
+              <td><input type="number" step="0.1" name="crossProd" class="calc" value="0"></td><td><input type="number" step="0.1" name="crossQC" class="calc" value="0"></td>
+              <td class="grp-total"><input id="capVsAvailPct" readonly></td><td class="grp-total"><input id="addlHrs" name="addlHrs" readonly></td>
+              <td class="grp-total"><input id="otHrsReq" name="otHrsReq" readonly></td><td class="grp-total"><input id="compoffPlannedCap" readonly></td>
+            </tr></tbody></table></div>
+          <input type="hidden" id="availCap" name="availCap"><input type="hidden" id="capVsAvail" name="capVsAvail">
+          <div id="gapBanner" class="banner"></div>
+          <div class="subhead">Requested OT &amp; Compoff Hours</div>
+          <div class="ot-req-grid">
+            <div><label class="req">Requested Production OT Hrs.</label><input type="number" step="0.1" name="otProd" class="calc" required value="0"></div>
+            <div><label class="req">Requested QC OT Hrs.</label><input type="number" step="0.1" name="otQC" class="calc" required value="0"></div>
+            <div class="emph"><label>OT Hrs. Required (auto = Prod + QC)</label><input id="otHrsReqMirror" readonly style="font-weight:800"></div>
+            <div><label>Planned Production Compoff Hrs.</label><input type="number" step="0.1" name="prodCompoff" class="calc" value="0"></div>
+            <div><label>Planned QC Compoff Hrs.</label><input type="number" step="0.1" name="qcCompoff" class="calc" value="0"></div>
+            <div class="emph"><label>Compoff Hrs. Planned (auto = Prod + QC)</label><input name="compoffPlanned" id="compoffPlanned" readonly style="font-weight:800"></div>
+          </div>
+          <div class="ot-split"><div class="ot-split-title">OT / Compoff Split</div>
+            <div class="ot-split-row"><span class="lbl">OT</span><span class="hrs" id="otSplitHrs">0</span><span class="unit">hrs</span><span class="sep">|</span><span class="pctv" id="otSplitPct">0.00%</span></div>
+            <div class="ot-split-row"><span class="lbl">Comp Off</span><span class="hrs" id="compoffSplitHrs">0</span><span class="unit">hrs</span><span class="sep">|</span><span class="pctv" id="compoffSplitPct">0.00%</span></div></div>
+          <div style="margin-top:14px"><label class="req">Comments / Justification narrative</label><textarea name="comments" required placeholder="Summary justification…"></textarea></div>
+        </section>
+        <div class="stage-header gap"><h2>Business Justification</h2><p class="stage-sub">Complete each section below.</p></div>
+        <div id="questionSections"></div>
+        <section class="form-section"><div class="grid">
+          <div class="declaration"><input type="checkbox" name="declaration" id="decl" required><label for="decl" style="font-weight:600;margin:0">I confirm that all reasonable capacity recovery actions have been explored and OT is requested only after exhausting available alternatives.</label></div>
+          <div class="row-actions"><button type="submit" id="submitBtn" class="btn primary">Submit OT Request</button><button type="reset" class="btn ghost">Clear Form</button><span id="liveScore" class="muted"></span></div>
+        </div></section>
+      </div>
+    </form>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" style="display:none">
+    <div class="kpis" id="dashKpis"></div>
+    <div class="card">
+      <div class="flex-between"><h2>Governance Dashboard <span class="sub" id="scopeNote" style="font-weight:400;text-transform:none"></span></h2>
+        <div class="toolbar" style="margin:0">
+          <div><label>Search</label><input id="search" placeholder="account / PM / cell / ID"></div>
+          <div><label>From</label><input type="date" id="fromDate"></div>
+          <div><label>To</label><input type="date" id="toDate"></div>
+          <div><label>Status</label><select id="filterStatus"><option value="">All</option><option>Pending</option><option>To Modify</option><option>Approved</option><option>Rejected</option><option>Closed</option></select></div>
+          <div><label>Mine only</label><label style="display:flex;align-items:center;gap:5px;height:38px"><input type="checkbox" id="mineOnly" style="width:auto;height:auto"> Show only my requests</label></div>
+          <div><label>&nbsp;</label><button class="btn ghost sm" id="clearFilters">Clear</button></div>
+          <div><label>&nbsp;</label><button class="btn ghost sm" id="exportCsv">⬇ Export CSV</button></div>
+          <div><label>&nbsp;</label><button class="btn ghost sm" id="refreshDash">↻ Refresh</button></div>
+        </div></div>
+      <div id="dashLoading" class="muted" style="margin:6px 0;display:none">Loading…</div>
+      <div style="overflow-x:auto;max-height:66vh;overflow-y:auto"><table class="dt" id="dashTable">
+        <thead><tr><th>Req ID</th><th>Date</th><th>Cell</th><th>Account</th><th>PM</th><th>OT Type</th><th>Total Hrs</th><th>Cap vs Avail</th><th>Addl</th><th>OT Hrs</th><th>Risk</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div id="dashEmpty" class="empty">No requests match. Submit one or adjust filters.</div>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="tab-review" style="display:none">
+    <div class="card">
+      <div class="flex-between"><h2>3:30 PM Review — Decision Support</h2>
+        <div class="toolbar" style="margin:0">
+          <div><label>From</label><input type="date" id="rFromDate"></div><div><label>To</label><input type="date" id="rToDate"></div>
+          <div><label>&nbsp;</label><label style="display:flex;align-items:center;gap:5px;height:38px"><input type="checkbox" id="showProcessed" style="width:auto;height:auto"> Show processed</label></div>
+          <div><label>&nbsp;</label><button class="btn ghost sm" id="rClear">Clear</button></div>
+        </div></div>
+      <p class="sub">Each request shows risk, key metrics and a System Recommendation. Actions: <b>View · Approve · Reject · To Modify</b>.</p>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+  <!-- OSL -->
+  <section id="tab-osl" style="display:none">
+    <div class="card"><h2>OSL Consolidated Summary <span class="pill green">Approved only</span></h2>
+      <div class="toolbar"><div><label>From</label><input type="date" id="oFromDate"></div><div><label>To</label><input type="date" id="oToDate"></div><div><label>&nbsp;</label><button class="btn primary sm" id="oslBtn">Generate</button></div><div><label>&nbsp;</label><button class="btn ghost sm" id="oslCsv">⬇ Export</button></div></div>
+      <div id="oslSummary"><p class="muted">Choose a range and click Generate.</p></div>
+    </div>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section id="tab-analytics" style="display:none">
+    <div class="card"><div class="flex-between"><h2>OT Health</h2><button class="btn ghost sm" id="anaRefresh">↻ Refresh</button></div><div class="kpis" id="anaKpis"></div></div>
+    <div class="card" id="anaAlertsCard" style="display:none"><h2>Live Warnings</h2><div class="alert-list" id="anaAlerts"></div></div>
+    <div class="grid">
+      <div class="card"><h2>OT Hours by Account</h2><div class="bars" id="byAccount"></div></div>
+      <div class="card"><h2>OT Hours by Cell</h2><div class="bars" id="byCell"></div></div>
+      <div class="card"><h2>OT by Nature of Increase</h2><div class="bars" id="byNature"></div></div>
+      <div class="card"><h2>OT by Risk Band</h2><div class="bars" id="byRiskBand"></div></div>
+    </div>
+    <div class="card"><h2>Planned vs Actual OT (Closed)</h2><div id="plannedVsActual"></div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" style="display:none">
+    <div class="card">
+      <h2>⚙️ Settings</h2>
+      <div id="hostCtx" class="muted" style="margin:6px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fafcfc"></div>
+      <p class="sub"><b>Storage:</b> data is saved to the SharePoint <code>OT_Requests</code> list when this page is hosted inside SharePoint (same site). Otherwise it is kept in this browser's local storage (Demo).</p>
+      <div class="row-actions" style="margin-top:4px"><button class="btn ghost" id="cfgTest">Test SharePoint Connection</button><span id="cfgStatus" class="muted"></span></div>
+      <h2 style="margin-top:20px">Demo / Testing</h2>
+      <p class="sub">Load a few sample requests (useful in Demo mode / before go-live).</p>
+      <div class="row-actions" style="margin-top:4px"><button class="btn primary" id="seedDemoBtn">✨ Load Demo Data</button><button class="btn ghost" id="clearDemoBtn">🗑 Clear Local Data</button><span id="seedStatus" class="muted"></span></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalContent"></div></div>
+<footer>OT Approval Portal — Username/Password edition · saves to SharePoint when hosted in SharePoint, otherwise local</footer>
+
+<script>/* ============================================================
+   OT Portal — Username/Password edition · configuration + data model
+   ============================================================ */
+const PUBLIC_HOLIDAYS = ['2026-01-01','2026-01-26','2026-08-15','2026-10-02','2026-10-20','2026-11-08','2026-12-25'];
+
+/* ============================================================
+   USER DIRECTORY (username + password login)
+   ------------------------------------------------------------
+   ⚠ SECURITY NOTE: because this is a browser-only HTML app with no
+   server, passwords here are visible to anyone who views source.
+   Treat this as a simple internal *gate*, not real security.
+   Change usernames/passwords/roles below as needed.
+   Roles:  PM (Production Manager) · CM (Cell Manager) · OSL
+   ============================================================ */
+const USERS = [
+  { username:'rahul',    password:'rahul@123',    name:'Rahul Ravindran',       role:'CM',  cell:'Cell-1', email:'rahul@sgxgraphics.com' },
+  { username:'pandian',  password:'pandian@123',  name:'Pandian Nagarajan',     role:'PM',  cell:'Cell-1', email:'pandian@sgxgraphics.com' },
+  { username:'siva',     password:'siva@123',     name:'Sivananda Vijayakumar', role:'OSL', cell:'All',    email:'siva@sgxgraphics.com' },
+  { username:'franklin', password:'franklin@123', name:'Franklin Lourduraj',    role:'PM',  cell:'Cell-3', email:'franklin@sgxgraphics.com' }
+];
+/* Which tabs/actions each role can use (simple, editable) */
+const ROLE_PERMS = {
+  PM:  { create:true,  dashboard:true, review:false, osl:false, analytics:false, approve:false, close:false },
+  CM:  { create:true,  dashboard:true, review:true,  osl:true,  analytics:true,  approve:true,  close:true  },
+  OSL: { create:false, dashboard:true, review:false, osl:true,  analytics:true,  approve:false, close:false }
+};
+const ROLE_LABEL = { PM:'Production Manager', CM:'Cell Manager', OSL:'OSL' };
+
+const NATURE_MAP = {
+  'Demand / Volume Related':['One-Time Volume Spike','Seasonal Increase','Ongoing Business Growth','Unplanned Client Request','New Business / Account Transition','New Product / SKU Launch','Special Project','Marketing / Promotional Campaign','Volume Pull-Forward by Client'],
+  'Delivery Commitment Related':['Rush Project with Short SLA','Rush Delivery Request due to Client Requirement','Rush Delivery Request due to SGS Error','Customer Escalation Recovery','Backlog Recovery','Critical Business Priority Request'],
+  'Capacity Related':['Open Headcount / Resource Shortage','Attrition Impact','Planned Leave Impact','Unplanned Absenteeism','Skill-Based Resource Constraint','Cross-Training Gap','Production Capacity Constraint','QC Capacity Constraint'],
+  'Process / Quality Related':['Rework Due to Internal Error','Rework Due to Client Change Request','High Query Volume / Query Resolution Delay','Approval Delay from Client','Quality Recovery Activity'],
+  'Technology / System Related':['System Downtime Recovery','Application / Software Issue','Infrastructure Constraint','License Availability Constraint']
+};
+function s3yn(id,q){return [{id,q,type:'yesno'},{id:id+'_res',q:'Supported Resource Name(s)',type:'text',hint:'Enter resource name(s)…',showWhen:{field:id,val:'Yes'}},{id:id+'_why',q:'Why not?',type:'text',hint:'Enter reason…',showWhen:{field:id,val:'No'}}];}
+
+const QUESTION_SECTIONS = [
+  { id:'s1', title:'Section 1 · Business Impact & Urgency', items:[
+    {id:'q1_1', q:'What specific business problem are you trying to solve through this OT?', type:'text', hint:'e.g. clearing weekend backlog, meeting client fast-track TAT, recovering from unplanned absenteeism'},
+    {id:'q1_2', q:'What will happen if OT is not approved?', type:'text'},
+    {id:'q1_3', q:'How many jobs are at risk of missing the agreed TAT?', type:'num'},
+    {id:'q1_4', q:'Expected impact on OTD (%) if OT is not approved — auto (jobs at risk ÷ total jobs)', type:'calc'},
+    {id:'q1_5', q:'Any customer escalation risk? (specify customer/account & impact)', type:'text'}
+  ]},
+  { id:'s2', title:'Section 2 · Planning Accountability', items:[
+    {id:'q2_1', q:'Was this volume forecasted?', type:'yesno'},
+    {id:'q2_2', q:'If forecasted, why was adequate capacity not planned?', type:'text', showWhen:{field:'q2_1',val:'Yes'}},
+    {id:'q2_f', q:'Forecasted volume (job count) — used to auto-calc variance', type:'num', showWhen:{field:'q2_1',val:'Yes'}},
+    {id:'q2_4', q:'Variance between forecasted volume and actual volume (%) — auto', type:'calc', showWhen:{field:'q2_1',val:'Yes'}},
+    {id:'q2_3', q:'If not forecasted, when was the volume increase identified?', type:'text', showWhen:{field:'q2_1',val:'No'}},
+    {id:'natureOfIncrease', q:'Nature of increase?', type:'catdep', catField:'natureOfIncreaseCategory', catLabel:'Nature of Increase – Category', detLabel:'Nature of Increase', map:NATURE_MAP},
+    {id:'q2_6', q:'Has this account required OT in the last 30 days? If yes, why repeated?', type:'text'},
+    {id:'q2_7', q:'Evidence that volume may continue at same level next week?', type:'text'}
+  ]},
+  { id:'s3', title:'Section 3 · Capacity Recovery Actions', items:[].concat(
+    s3yn('q3_1','Utilized all available trained resources within your Cell?'),
+    s3yn('q3_2','Checked for surplus capacity within your Cell?'),
+    s3yn('q3_3','Requested cross-support from other Cells?'),
+    [{id:'q3_4', q:'How many support hours were explored from other Cells?', type:'num', showWhen:{field:'q3_3',val:'Yes'}}],
+    s3yn('q3_5','Explored support from Chennai?'),
+    s3yn('q3_6','Explored support from Mumbai?'),
+    s3yn('q3_7','Utilized available cross-trained resources?'),
+    [{id:'q3_10', q:'What further support opportunities still exist?', type:'text'}]
+  )},
+  { id:'s4', title:'Section 4 · Resource & Workforce Analysis', items:[
+    {id:'q4_prodCount', q:'Overall Cell Capacity — Production headcount', type:'num'},
+    {id:'q4_qcCount',   q:'Overall Cell Capacity — QC headcount', type:'num'},
+    {id:'q4_1', q:"Today's absenteeism (count)", type:'num'},
+    {id:'q4_1pct', q:"Today's absenteeism (%) — auto", type:'calc', warn10:true},
+    {id:'q4_2', q:"Tomorrow's expected absenteeism (count)", type:'num'},
+    {id:'q4_2pct', q:"Tomorrow's absenteeism (%) — auto", type:'calc', warn10:true},
+    {id:'q4_3', q:'Is OT required because of planned leave?', type:'yesno'},
+    {id:'q4_4', q:'Is OT required because of unexpected absenteeism?', type:'yesno'},
+    {id:'q4_4_count', q:'Unexpected Leave Resource Count', type:'num', intOnly:true, min:1, showWhen:{field:'q4_4',val:'Yes'}},
+    {id:'q4_4_names', q:'Unexpected Leave Resource Name(s)', type:'text', hint:'e.g. Rahul, Anil, Suresh', showWhen:{field:'q4_4',val:'Yes'}},
+    {id:'q4_5', q:'Are all team members fully utilized?', type:'yesno'},
+    {id:'q4_5tbl', type:'util5tbl', showWhen:{field:'q4_5',val:'Yes'}},
+    {id:'q4_6', q:'Any associates currently under-utilized?', type:'yesno'},
+    {id:'q4_7', q:'Have all shift replanning opportunities been explored?', type:'yesno'},
+    {id:'q4_9', q:'Can any low-priority work be deferred?', type:'yesno'}
+  ]},
+  { id:'s5', title:'Section 5 · Quality & Delivery Validation', items:[
+    {id:'q5_2', q:'Expected Backlog if OT is not approved (hrs)?', type:'num'},
+    {id:'q5_3', q:'Expected Backlog after OT completion (hrs)?', type:'num'},
+    {id:'q5_4', q:'Percentage of backlog OT will eliminate (%) — auto', type:'calc'},
+    {id:'q5_5', q:'How many jobs will OT enable us to complete?', type:'num'},
+    {id:'q5_6', q:'Expected OTD after OT execution (%) (target estimate)', type:'num'},
+    {id:'q5_7', q:'Will OT create any quality risk?', type:'yesno'},
+    {id:'q5_8', q:'How will quality be monitored during OT execution?', type:'text'},
+    {id:'q5_9', q:'Is QC capacity also sufficient?', type:'yesno'}
+  ]},
+  { id:'s6', title:'Section 6 · Client & Commercial Validation', items:[
+    {id:'q6_1', q:'Has the client requested urgent delivery?', type:'yesno'},
+    {id:'q6_2', q:'Is this client-requested fast-track work?', type:'yesno'},
+    {id:'q6_3count', q:'Fast-track work (job count)', type:'num'},
+    {id:'q6_3', q:'Percentage of workload that is fast-track (%) — auto', type:'calc'},
+    {id:'q6_4', q:'Is the OT cost chargeable to the client?', type:'select', opts:['Fully','Partially','No','Not Sure']},
+    {id:'q6_5', q:'Any commercial request supporting additional effort?', type:'text'},
+    {id:'q6_6', q:'Have we communicated risk status to BC/Client?', type:'yesno'},
+    {id:'q6_7', q:'Has the BC requested OT support?', type:'yesno'},
+    {id:'q6_8', q:'Supporting email reference (if applicable)', type:'text'}
+  ]},
+  { id:'s7', title:'Section 7 · Strategic & Preventive Thinking', items:[
+    {id:'q7_1', q:'What permanent action will prevent a similar OT request next week?', type:'text'},
+    {id:'q7_2', q:'What permanent action will prevent a similar OT request next month?', type:'text'},
+    {id:'q7_3', q:'Root cause of this OT request?', type:'select', opts:['Forecast issue','Capacity issue','Skills issue','Quality issue','Absenteeism','Planning issue','Client-driven spike','Technical issue']},
+    {id:'q7_4', q:'What support is required from Management to eliminate future OT dependency?', type:'text'},
+    {id:'q7_5', q:'What cross-training opportunities have been identified?', type:'text'},
+    {id:'q7_6', q:'What process improvements can reduce the need for OT?', type:'text'},
+    {id:'q7_8', q:'Expect another OT request within the next 14 days? If yes, why?', type:'text'}
+  ]}
+];
+
+const GOV_RULES = { capacity:{high:100,critical:120}, absenteeism:{warning:10,critical:15}, repeat:{warning:2,high:3,critical:5,days:30}, otd:{warning:5,high:10,critical:15}, backlog:{warningHrs:200,criticalHrs:500}, weights:{capacity:30,otd:25,resource:20,business:15,repeat:10} };
+</script>
+<script>/* ================= OT Portal — Username/Password edition · logic ================= */
+const LIST='OT_Requests', LS_KEY='ot_upw_data_v1', SESS_KEY='ot_upw_session_v1';
+
+/* ---------- hosting context ---------- */
+function webUrl(){try{if(typeof _spPageContextInfo!=='undefined'&&_spPageContextInfo.webAbsoluteUrl)return _spPageContextInfo.webAbsoluteUrl;var m=location.pathname.match(/^(\/(?:sites|teams)\/[^\/]+)/i);return location.origin+(m?m[1]:'');}catch(e){return location.origin;}}
+function inSharePoint(){return location.protocol==='https:'&&/\.sharepoint\.com$/i.test(location.hostname);}
+function apiBase(){return webUrl().replace(/\/$/,'')+'/_api';}
+function listUrl(){return apiBase()+"/web/lists/getbytitle('"+LIST+"')";}
+let USER=null;                 /* {username,name,role,cell,email} */
+
+/* ---------- SharePoint REST ---------- */
+function spDigest(){return fetch(apiBase()+"/contextinfo",{method:'POST',credentials:'include',headers:{'Accept':'application/json;odata=nometadata'}}).then(r=>{if(!r.ok)throw new Error('contextinfo '+r.status);return r.json();}).then(j=>j.FormDigestValue);}
+function spColumns(rec){return {Title:rec.id,PayloadJson:JSON.stringify(stripT(rec)),Account:rec.account||'',Cell:rec.cell||'',PMName:rec.pmName||'',OTType:rec.otType||'',ReqStatus:rec.status||'',OTHrsRequired:(rec.otHrsReq!=null?Number(rec.otHrsReq):null),SubmittedByEmail:rec.submittedByEmail||'',DateRequested:rec.dateRequested||''};}
+function stripT(r){const c=Object.assign({},r);delete c._risk;return c;}
+
+/* ---------- storage: SharePoint if same-origin, else local ---------- */
+function useSP(){return inSharePoint();}
+function localArr(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return[];}}
+function localSave(a){try{localStorage.setItem(LS_KEY,JSON.stringify(a));}catch(e){}}
+async function dataLoad(){
+  if(useSP()){let url=listUrl()+"/items?$select=Id,Title,PayloadJson&$top=2000";const out=[];let g=0;while(url&&g<50){g++;const r=await fetch(url,{credentials:'include',headers:{'Accept':'application/json;odata=nometadata'}});if(!r.ok)throw new Error('GET '+r.status);const j=await r.json();(j.value||[]).forEach(it=>{let d={};try{d=JSON.parse(it.PayloadJson||'{}');}catch(e){}d.spId=it.Id;out.push(d);});url=j['odata.nextLink']||null;}return out;}
+  return localArr();
+}
+async function dataAdd(rec){
+  if(useSP()){const d=await spDigest();const r=await fetch(listUrl()+"/items",{method:'POST',credentials:'include',headers:{'Accept':'application/json;odata=nometadata','Content-Type':'application/json;odata=nometadata','X-RequestDigest':d},body:JSON.stringify(spColumns(rec))});if(!r.ok)throw new Error('SAVE '+r.status);return;}
+  const a=localArr();a.push(rec);localSave(a);
+}
+async function dataUpdate(rec){
+  if(useSP()){if(rec.spId==null)return dataAdd(rec);const d=await spDigest();const r=await fetch(listUrl()+"/items("+rec.spId+")",{method:'POST',credentials:'include',headers:{'Accept':'application/json;odata=nometadata','Content-Type':'application/json;odata=nometadata','X-RequestDigest':d,'IF-MATCH':'*','X-HTTP-Method':'MERGE'},body:JSON.stringify(spColumns(rec))});if(!r.ok)throw new Error('UPDATE '+r.status);return;}
+  const a=localArr();const i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);localSave(a);
+}
+
+/* ---------- toast ---------- */
+function toast(msg,ok){let t=document.getElementById('_toast');if(!t){t=document.createElement('div');t.id='_toast';t.style.cssText='position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:9999;padding:12px 20px;border-radius:10px;font-weight:700;font-size:13.5px;box-shadow:0 6px 24px rgba(0,0,0,.2);max-width:90%;text-align:center;transition:opacity .3s;';document.body.appendChild(t);}t.style.background=ok===false?'#fde8e8':'#e7f7ee';t.style.color=ok===false?'#d93636':'#12a150';t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>{t.style.opacity='0';},3600);}
+function safeConfirm(m){try{return window.confirm(m);}catch(e){return true;}}
+function emailEq(a,b){return String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase()&&String(a||'').trim()!=='';}
+function can(a){return USER&&ROLE_PERMS[USER.role]&&ROLE_PERMS[USER.role][a]===true;}
+
+/* ---------- dates ---------- */
+function isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function ddmmyyyy(d){return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();}
+function prevWorkingDates(anchorISO,count){const hol=new Set((typeof PUBLIC_HOLIDAYS!=='undefined'&&PUBLIC_HOLIDAYS)||[]);const out=[];if(!anchorISO)return out;let d=new Date(anchorISO+'T00:00:00');if(isNaN(d.getTime()))return out;let g=0;while(out.length<count&&g<600){g++;d.setDate(d.getDate()-1);const dow=d.getDay();if(dow===0||dow===6)continue;const iso=isoDate(d);if(hol.has(iso))continue;out.push(iso);}return out;}
+
+/* ================= LOGIN (username/password) ================= */
+function loadSession(){try{return JSON.parse(localStorage.getItem(SESS_KEY)||sessionStorage.getItem(SESS_KEY)||'null');}catch(e){return null;}}
+function saveSession(u,remember){const s=JSON.stringify({username:u.username});try{(remember?localStorage:sessionStorage).setItem(SESS_KEY,s);}catch(e){}}
+function clearSession(){try{localStorage.removeItem(SESS_KEY);sessionStorage.removeItem(SESS_KEY);}catch(e){}}
+function findUser(username){return USERS.find(u=>String(u.username).trim().toLowerCase()===String(username).trim().toLowerCase());}
+
+document.getElementById('pwToggle').onclick=function(){const p=document.getElementById('loginPass');if(p.type==='password'){p.type='text';this.textContent='Hide';}else{p.type='password';this.textContent='Show';}};
+document.getElementById('loginForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  const err=document.getElementById('loginErr');err.style.display='none';
+  const un=document.getElementById('loginUser').value.trim();
+  const pw=document.getElementById('loginPass').value;
+  const rem=document.getElementById('loginRemember').checked;
+  if(!un||!pw){err.style.display='block';err.textContent='Please enter your username and password.';return;}
+  const u=findUser(un);
+  if(!u||String(u.password)!==String(pw)){err.style.display='block';err.textContent='Invalid username or password. Please try again.';return;}
+  USER={username:u.username,name:u.name,role:u.role,cell:u.cell,email:u.email};
+  saveSession(u,rem);
+  startApp();
+});
+document.getElementById('signOutBtn').onclick=function(){clearSession();location.reload();};
+
+function startApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('appHeader').style.display='flex';
+  document.getElementById('tabs').style.display='flex';
+  document.getElementById('appMain').style.display='block';
+  document.getElementById('waName').textContent=USER.name;
+  document.getElementById('waSub').textContent=ROLE_LABEL[USER.role]+(USER.cell&&USER.cell!=='All'?(' · '+USER.cell):'');
+  const sp=useSP();const mb=document.getElementById('modeBadge');mb.textContent=sp?'SHAREPOINT':'DEMO';mb.className='mode-badge '+(sp?'prod':'dev');
+  document.getElementById('storeInfo').textContent=sp?('SharePoint list: '+LIST):'local storage (this browser)';
+  document.getElementById('backendChip').textContent=sp?'SharePoint':'Local';
+  /* permission-driven tabs */
+  let first=null;document.querySelectorAll('#tabs button').forEach(b=>{const p=b.dataset.perm;const ok=can(p)||b.dataset.tab==='settings';if(ok){b.classList.remove('hide');if(!first)first=b;}else b.classList.add('hide');});
+  buildQuestions();updateVolumeLayout();recalc();prefillDefaults();
+  activateTab(first||document.querySelector('#tabs button[data-tab="dashboard"]'));
+}
+function prefillDefaults(){const pm=document.getElementById('pmNameField');if(pm&&!pm.value)pm.value=USER.name;const cell=document.querySelector('#otForm select[name="cell"]');if(cell&&USER.cell&&USER.cell!=='All'&&!cell.value)cell.value=USER.cell;}
+
+/* auto-login if session exists */
+window.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('loginHint').innerHTML='Signed-in users and roles are managed in the file\'s <b>USERS</b> list (config). '+(inSharePoint()?'Hosted in SharePoint — submissions save to the <b>'+LIST+'</b> list.':'Not in SharePoint — running in local Demo mode.');
+  const s=loadSession();if(s&&s.username){const u=findUser(s.username);if(u){USER={username:u.username,name:u.name,role:u.role,cell:u.cell,email:u.email};startApp();}}
+});
+
+/* ================= TABS ================= */
+function activateTab(btn){if(!btn)return;document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');['request','dashboard','review','osl','analytics','settings'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display='none';});const tab=btn.dataset.tab;document.getElementById('tab-'+tab).style.display='block';if(tab==='dashboard')renderDashboard();if(tab==='review')renderReview();if(tab==='osl')document.getElementById('oslSummary').innerHTML='<p class="muted">Choose a range and click Generate.</p>';if(tab==='analytics')renderAnalytics();if(tab==='settings')loadSettings();}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='request'&&!can('create')){toast('Your role cannot create requests.',false);return;}activateTab(b);});
+
+/* ================= QUESTION BUILDER ================= */
+function inputFor(it){if(it.type==='calc')return `<input name="${it.id}" readonly>`;if(it.type==='yesno')return `<div class="yn"><label><input type="radio" name="${it.id}" value="Yes"> Yes</label><label><input type="radio" name="${it.id}" value="No"> No</label></div>`;if(it.type==='num'){const step=it.intOnly?1:0.1;const mn=(it.min!=null)?` min="${it.min}"`:'';return `<input type="number" step="${step}"${mn} name="${it.id}" value="">`;}if(it.type==='select')return `<select name="${it.id}"><option value="">Select</option>${it.opts.map(o=>`<option>${o}</option>`).join('')}</select>`;return `<textarea name="${it.id}" placeholder="${it.hint||'Your answer…'}"></textarea>`;}
+function renderItem(it){
+  if(it.type==='util5tbl'){let rows='';for(let i=1;i<=5;i++)rows+=`<tr><td class="dt"><input name="q4_5_d${i}" readonly placeholder="—"></td><td><input type="number" min="0" max="100" step="0.1" class="u-in" name="q4_5_u${i}"><span class="pct">%</span></td></tr>`;rows+=`<tr class="avg"><td>Overall Average</td><td><input class="u-in" name="q4_5_avg" readonly><span class="pct">%</span></td></tr>`;return `<div class="qitem qfull" data-qid="q4_5tbl" data-showfield="q4_5" data-showval="Yes"><label class="qq req">Utilization % (Past 5 Working Days)</label><div class="muted" style="font-size:11px;margin:-2px 0 4px">Dates auto-populate from Date – OT Requested (excludes weekends &amp; public holidays), read-only.</div><table class="util-tbl"><thead><tr><th>Past Working Date</th><th>Utilization %</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+  if(it.type==='catdep'){const catOpts=Object.keys(it.map).map(c=>`<option value="${c}">${c}</option>`).join('');return `<div class="qitem" data-qid="${it.catField}"><label class="qq req">${it.catLabel}</label><select name="${it.catField}" data-natcat="${it.id}"><option value="">Select Category</option>${catOpts}</select></div><div class="qitem" data-qid="${it.id}"><label class="qq req">${it.detLabel}</label><select name="${it.id}" data-natdet="${it.id}" disabled><option value="">Select Nature of Increase</option></select></div>`;}
+  const sw=it.showWhen?` data-showfield="${it.showWhen.field}" data-showval="${it.showWhen.val}"`:'';const cls='qitem'+(it.type==='calc'?' calc':'')+(it.type==='text'?' qfull':'');const hint=it.hint&&it.type!=='text'?`<div class="muted" style="font-size:11px;margin:-2px 0 3px">${it.hint}</div>`:'';
+  if(it.type==='calc'){const warn=it.warn10?`<span class="abs-warn" data-warnfor="${it.id}" style="display:none">⚠ High absenteeism – above 10%</span>`:'';return `<div class="${cls}" data-qid="${it.id}"${sw}><label class="qq req">${it.q}</label>${hint}<input name="${it.id}" readonly>${warn}</div>`;}
+  return `<div class="${cls}" data-qid="${it.id}"${sw}><label class="qq req">${it.q}</label>${hint}${inputFor(it)}</div>`;
+}
+function buildQuestions(){document.getElementById('questionSections').innerHTML=QUESTION_SECTIONS.map(sec=>`<div class="qgrid"><h3>${sec.title}</h3>${sec.items.map(renderItem).join('')}</div>`).join('');wireNature();applyConditionals();}
+function wireNature(){document.querySelectorAll('#questionSections select[data-natcat]').forEach(catSel=>{const id=catSel.dataset.natcat;const detSel=document.querySelector(`#questionSections select[data-natdet="${id}"]`);if(!detSel)return;function fill(keep){const cat=catSel.value;const opts=(NATURE_MAP[cat]||[]);const prev=keep!=null?keep:'';detSel.innerHTML='<option value="">Select Nature of Increase</option>'+opts.map(o=>`<option${o===prev?' selected':''}>${o}</option>`).join('');detSel.disabled=!cat;if(!opts.includes(prev))detSel.value='';}catSel._fill=fill;catSel.onchange=()=>fill('');});}
+function fieldVal(name){const els=form.elements[name];if(!els)return'';if(els.length&&els[0]&&els[0].type==='radio'){for(const r of els)if(r.checked)return r.value;return'';}return els.value!==undefined?els.value:'';}
+function applyConditionals(){document.querySelectorAll('#questionSections .qitem[data-showfield]').forEach(div=>{const f=div.dataset.showfield,v=div.dataset.showval;const show=(fieldVal(f)===v);div.style.display=show?'':'none';if(!show)clearQItem(div);});}
+function clearQItem(div){div.querySelectorAll('input,select,textarea').forEach(el=>{if(el.readOnly)return;if(el.type==='radio'){if(el.checked)el.checked=false;}else if(el.value!=='')el.value='';});}
+
+/* ================= CALC ENGINE ================= */
+const form=document.getElementById('otForm');
+function num(n){const el=form.elements[n];const v=parseFloat(el&&el.value);return isNaN(v)?0:v;}
+function round1(n){return Math.round(n*10)/10;}
+function setCalc(name,val){const el=form.elements[name];if(el)el.value=val;}
+function setId(id,val){const el=document.getElementById(id);if(el)el.value=val;}
+function setTxt(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+function pctStr(a,b){const A=Number(a)||0,B=Number(b)||0;return (B>0?(A/B*100):0).toFixed(2)+'%';}
+function warnAbs(id,p){const el=form.elements[id];const w=document.querySelector(`[data-warnfor="${id}"]`);if(!el)return;if(p>10){el.classList.add('abs-red');if(w)w.style.display='inline-flex';}else{el.classList.remove('abs-red');if(w)w.style.display='none';}}
+function isWeekend(){const el=form.elements['otType'];return !el||el.value!=='Weekday OT';}
+function updateVolumeLayout(){const w=isWeekend();document.body.classList.toggle('mode-weekend',w);document.body.classList.toggle('mode-weekday',!w);}
+function updateUtilDates(){const anchor=form.elements['dateRequested']?form.elements['dateRequested'].value:'';const dates=prevWorkingDates(anchor,5);for(let i=1;i<=5;i++){const dEl=form.elements['q4_5_d'+i],uEl=form.elements['q4_5_u'+i];if(!dEl)continue;const iso=dates[i-1]||'';const disp=iso?ddmmyyyy(new Date(iso+'T00:00:00')):'';if(dEl.value!==disp){dEl.value=disp;if(uEl)uEl.value='';}}}
+function updateUtilAvg(){let s=0;for(let i=1;i<=5;i++){const v=parseFloat((form.elements['q4_5_u'+i]||{}).value);if(!isNaN(v))s+=v;}const a=form.elements['q4_5_avg'];if(a)a.value=(s/5).toFixed(2);}
+function recalcStage1(){const tj=num('backlogCount')+num('day1Count')+num('day2Count')+num('day3Count')+num('futureCount');const th=num('backlogHrs')+num('day1Hrs')+num('day2Hrs')+num('day3Hrs')+num('futureHrs');setId('totalJobCount',tj);setId('totalHrsReq',round1(th));const p3=round1(num('prodPerDay')*4),q3=round1(num('qcPerDay')*4);setId('prod3day',p3);setId('qc3day',q3);const av=p3+q3+num('crossProd')+num('crossQC');setId('availCap',round1(av));const ratio=av>0?(th/av):0;setId('capVsAvail',ratio.toFixed(4));setId('capVsAvailPct',av>0?(ratio*100).toFixed(2)+'%':'0.00%');const addl=th-av;setId('addlHrs',round1(addl));const ot=round1(num('otProd')+num('otQC'));setId('otHrsReq',ot);setId('otHrsReqMirror',ot);const co=round1(num('prodCompoff')+num('qcCompoff'));setId('compoffPlanned',co);setId('compoffPlannedCap',co);const ta=ot+co;setTxt('otSplitHrs',ot);setTxt('compoffSplitHrs',co);setTxt('otSplitPct',pctStr(ot,ta));setTxt('compoffSplitPct',pctStr(co,ta));updateVolumeLayout();const b=document.getElementById('gapBanner');if(th>0&&addl<=0){b.className='banner ok';b.textContent='✅ Capacity covers demand. Submission blocked unless a gap exists.';}else if(addl>0){b.className='banner warn';b.textContent=`⚠ Additional ${round1(addl)} hrs required — OT justification needed.`;}else{b.className='banner';b.textContent='';}}
+function recalcQ(){const tj=num('totalJobCount');const cap=num('q4_prodCount')+num('q4_qcCount');setCalc('q1_4',pctStr(num('q1_3'),tj));setCalc('q2_4',num('q2_f')>0?pctStr(tj-num('q2_f'),num('q2_f')):'0.00%');const a1=cap>0?num('q4_1')/cap*100:0,a2=cap>0?num('q4_2')/cap*100:0;setCalc('q4_1pct',a1.toFixed(2)+'%');warnAbs('q4_1pct',a1);setCalc('q4_2pct',a2.toFixed(2)+'%');warnAbs('q4_2pct',a2);setCalc('q5_4',num('q5_2')>0?pctStr(num('q5_2')-num('q5_3'),num('q5_2')):'0.00%');setCalc('q6_3',pctStr(num('q6_3count'),tj));}
+function recalc(){recalcStage1();recalcQ();applyConditionals();if(fieldVal('q4_5')==='Yes')updateUtilDates();updateUtilAvg();updateLiveScore();}
+form.addEventListener('input',recalc);form.addEventListener('change',recalc);
+if(form.elements['otType'])form.elements['otType'].addEventListener('change',()=>{updateVolumeLayout();recalc();});
+if(form.elements['dateRequested'])form.elements['dateRequested'].addEventListener('change',()=>{if(fieldVal('q4_5')==='Yes')updateUtilDates();updateUtilAvg();});
+(function(){const ps=form.elements['otPlannedStartDate'],pe=form.elements['otPlannedEndDate'];if(ps&&pe)ps.addEventListener('change',()=>{pe.min=ps.value||'';if(pe.value&&ps.value&&pe.value<ps.value)pe.value='';});})();
+
+/* ================= RISK (lite) ================= */
+function clamp(n,lo,hi){return Math.max(lo,Math.min(hi,n));}
+function nnum(v){const n=parseFloat(v);return isNaN(n)?0:n;}
+function riskBandOf(s){return s>=80?'Critical':s>=60?'High':s>=40?'Moderate':'Low';}
+function riskEmoji(b){return (b==='Critical'||b==='High')?'🔴':b==='Moderate'?'🟠':'🟢';}
+function repeatInfo(rec,all){const acc=(rec.account||'').toLowerCase();const base=rec.dateRequested?new Date(rec.dateRequested+'T00:00:00'):new Date();const lim=new Date(base);lim.setDate(lim.getDate()-GOV_RULES.repeat.days);let c=0,hrs=0;(all||[]).forEach(x=>{if(x.id===rec.id)return;if((x.account||'').toLowerCase()!==acc||!x.dateRequested)return;const dt=new Date(x.dateRequested+'T00:00:00');if(dt>=lim&&dt<=base){c++;hrs+=nnum(x.otHrsReq);}});const ord=c+1;let level='none';if(ord>=GOV_RULES.repeat.critical)level='critical';else if(ord>=GOV_RULES.repeat.high)level='high';else if(ord>=GOV_RULES.repeat.warning)level='warning';return {count30:c,ordinal:ord,hrs30:+hrs.toFixed(1),level};}
+function computeRisk(d,all){const R=GOV_RULES;const capPct=nnum(d.capVsAvailPct);let cap=capPct<=R.capacity.high?(capPct/R.capacity.high*60):60+clamp((capPct-R.capacity.high)/Math.max(1,R.capacity.critical-R.capacity.high)*40,0,40);cap=clamp(cap,0,100);const otdImp=parseFloat(d.q1_4)||0;let otd=clamp(otdImp/Math.max(1,R.otd.critical)*100,0,100);const bk=nnum(d.q5_2);if(bk>R.backlog.criticalHrs)otd=Math.max(otd,85);else if(bk>R.backlog.warningHrs)otd=Math.max(otd,55);const util=nnum(d.overallUtilizationPercent);const absT=parseFloat(d.q4_1pct)||0,absTm=parseFloat(d.q4_2pct)||0;let res=clamp(util,0,100)*0.4+clamp(Math.max(absT,absTm)/Math.max(1,R.absenteeism.critical)*100,0,100)*0.4;if(d.q4_4==='Yes')res+=20;res=clamp(res,0,100);let biz=0;if((d.q1_5||'').trim())biz+=30;if(d.q6_2==='Yes')biz+=25;if(d.natureOfIncrease==='Critical Business Priority Request')biz+=25;biz+=clamp(otdImp/Math.max(1,R.otd.critical)*20,0,20);biz=clamp(biz,0,100);const rep=repeatInfo(d,all);let rr=rep.level==='critical'?100:rep.level==='high'?75:rep.level==='warning'?50:clamp(rep.count30*15,0,40);const W=R.weights,tot=W.capacity+W.otd+W.resource+W.business+W.repeat;const overall=Math.round((cap*W.capacity+otd*W.otd+res*W.resource+biz*W.business+rr*W.repeat)/tot);return {capacity:Math.round(cap),otd:Math.round(otd),resource:Math.round(res),business:Math.round(biz),repeat:Math.round(rr),overall,band:riskBandOf(overall),rep};}
+function ensureRisk(r,all){if(r._risk)return r._risk;const risk=computeRisk(r,all);r._risk=risk;if(r.riskScore==null){r.riskScore=risk.overall;r.riskBand=risk.band;}return risk;}
+function recommendOT(d){const additional=round1(nnum(d.addlHrs));const cross=round1(nnum(d.crossProd)+nnum(d.crossQC));const compoff=round1(nnum(d.compoffPlanned));const requested=round1(nnum(d.otHrsReq));const residual=Math.max(0,+(additional-cross-compoff).toFixed(1));let action,recOT=0,reason='';if(additional<=0){action='Reject / Rework';reason='No additional hours required — capacity covers demand.';}else if(residual<=0){action=cross>0?(compoff>0?'OT + Compoff Mix':'Use Cross-Cell Support'):'Use Compoff';reason='Cross-cell / Compoff can cover the gap without new OT.';}else{recOT=residual;action=requested>residual+0.1?'Approve Partial OT':(compoff>0?'OT + Compoff Mix':'Approve OT');reason=`${residual} hrs residual after cross-cell (${cross}) & Compoff (${compoff}).`;}return {action,recommendedOT:+recOT.toFixed(1),recommendedCompoff:compoff,residual,cross,compoff,additional,requested,reason};}
+function earlyWarnings(d,all){const R=GOV_RULES;const out=[];const capPct=nnum(d.capVsAvailPct);if(nnum(d.totalHrsReq)>nnum(d.availCap))out.push({sev:'High',msg:'Required hours exceed available capacity.'});if(capPct>=R.capacity.critical)out.push({sev:'Critical',msg:`Capacity ${capPct}% (≥ ${R.capacity.critical}%).`});const absT=parseFloat(d.q4_1pct)||0,absTm=parseFloat(d.q4_2pct)||0;if(absT>R.absenteeism.critical||absTm>R.absenteeism.critical)out.push({sev:'High',msg:`Absenteeism today ${absT}% / tomorrow ${absTm}%.`});const otdImp=parseFloat(d.q1_4)||0;if(otdImp>=R.otd.critical)out.push({sev:'Critical',msg:`OTD impact ${otdImp}%.`});const rep=repeatInfo(d,all);if(rep.level==='critical'||rep.level==='high')out.push({sev:rep.level==='critical'?'Critical':'High',msg:`Repeat OT: ${rep.ordinal} requests / ${R.repeat.days} days.`});return out;}
+function effectiveness(r){if(r.status!=='Closed'||!r.actual)return null;const aOT=nnum(r.actual.otHours),pOT=nnum(r.otHrsReq);const otVar=+(aOT-pOT).toFixed(1);const pB=nnum(r.q5_2),aB=nnum(r.actual.backlog);const red=+(pB-aB).toFixed(1);const redPct=pB>0?+clamp(red/pB*100,0,100).toFixed(1):0;const otdImp=+(nnum(r.actual.otd)-nnum(r.q5_6)).toFixed(1);const eff=Math.round(clamp(redPct*0.6+clamp(nnum(r.actual.otd),0,100)*0.4,0,100));const cls=eff>=80?'Highly Effective':eff>=60?'Effective':eff>=40?'Partially Effective':'Ineffective';return {aOT,pOT,otVar,red,redPct,otdImp,eff,cls};}
+function computeScore(d){let forecast=d.q2_1==='Yes'?(d.q2_2?14:10):6;const rk=['q3_1','q3_2','q3_3','q3_5','q3_6','q3_7'];let yes=rk.filter(k=>d[k]==='Yes').length;const cross=Math.round(yes/rk.length*20);let recovery=(d.declaration?8:0)+(yes>=4?8:yes>=2?5:2)+(d.q3_10?4:0);recovery=Math.min(20,recovery);let just=0;just+=(Number(d.q1_3)>0?5:0);just+=((parseFloat(d.q1_4)||0)>0?5:0);just+=(d.q1_5?4:0);just+=(d.q1_1?3:0);just+=(d.q6_6==='Yes'?3:0);just=Math.min(20,just);const otd=Math.max(2,Math.min(20,Math.round((Number(d.q5_6)||0)/100*20)));return {total:Math.min(100,forecast+cross+recovery+just+otd)};}
+function otdDisp(v){if(v==null||v==='')return '0.00%';const s=String(v);return s.indexOf('%')>=0?s:((Number(s)||0).toFixed(2)+'%');}
+
+/* ================= read form / id ================= */
+function readForm(){const d={};new FormData(form).forEach((v,k)=>{d[k]=v;});d.declaration=form.declaration.checked;d.totalJobCount=num('backlogCount')+num('day1Count')+num('day2Count')+num('day3Count')+num('futureCount');d.totalHrsReq=round1(num('backlogHrs')+num('day1Hrs')+num('day2Hrs')+num('day3Hrs')+num('futureHrs'));d.prod3day=round1(num('prodPerDay')*4);d.qc3day=round1(num('qcPerDay')*4);d.availCap=round1(d.prod3day+d.qc3day+num('crossProd')+num('crossQC'));d.capVsAvailPct=d.availCap>0?+(d.totalHrsReq/d.availCap*100).toFixed(2):0;d.addlHrs=round1(d.totalHrsReq-d.availCap);d.otHrsReq=round1(num('otProd')+num('otQC'));d.compoffPlanned=round1(num('prodCompoff')+num('qcCompoff'));const ta=d.otHrsReq+d.compoffPlanned;d.otSplitPct=ta>0?+(d.otHrsReq/ta*100).toFixed(2):0;d.compoffSplitPct=ta>0?+(d.compoffPlanned/ta*100).toFixed(2):0;if(d.q4_5==='Yes'){const hist=[];let s=0;for(let i=1;i<=5;i++){const dt=d['q4_5_d'+i]||'';const up=d['q4_5_u'+i];const val=(up===''||up==null)?null:Number(up);if(val!=null)s+=val;hist.push({date:dt,utilizationPercent:val});}d.utilizationHistory=hist;d.overallUtilizationPercent=+(s/5).toFixed(2);}else{d.utilizationHistory=[];d.overallUtilizationPercent=null;}return d;}
+function updateLiveScore(){const d=readForm();const s=computeScore(d);const risk=computeRisk(d,localArr());document.getElementById('liveScore').textContent=`Score ${s.total}/100 · Risk ${risk.overall}/100 (${risk.band})`;}
+function newId(all){const n=new Date(),p='OT-'+n.getFullYear()+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'-';let max=0,ids={};(all||[]).forEach(r=>{ids[r.id]=1;if(typeof r.id==='string'&&r.id.indexOf(p)===0){const x=parseInt(r.id.slice(p.length),10);if(x>max)max=x;}});let s=max+1,id=p+String(s).padStart(5,'0');while(ids[id]){s++;id=p+String(s).padStart(5,'0');}return id;}
+
+/* ================= validation ================= */
+function validateQuestions(){for(const sec of QUESTION_SECTIONS){for(const it of sec.items){if(it.type==='calc')continue;if(it.type==='util5tbl'){if(fieldVal('q4_5')==='Yes'){for(let i=1;i<=5;i++){const el=form.elements['q4_5_u'+i];const raw=el?el.value:'';const v=parseFloat(raw);if(raw===''||isNaN(v)){el&&el.focus();toast('Enter Utilization % for all 5 days.',false);return false;}if(v<0||v>100){el&&el.focus();toast('Utilization % must be 0–100.',false);return false;}}}continue;}if(it.type==='catdep'){const cs=document.querySelector(`#questionSections select[name="${it.catField}"]`);const ds=document.querySelector(`#questionSections select[name="${it.id}"]`);if(!cs||!cs.value){cs&&cs.focus();toast('Please select: '+it.catLabel,false);return false;}if(!ds||!ds.value){ds&&ds.focus();toast('Please select: '+it.detLabel,false);return false;}continue;}const div=document.querySelector(`#questionSections .qitem[data-qid="${it.id}"]`);if(!div||div.style.display==='none')continue;const val=fieldVal(it.id);if(val===''||val==null){div.scrollIntoView({behavior:'smooth',block:'center'});toast('Please complete: '+it.q,false);return false;}}}return true;}
+
+/* ================= submit ================= */
+let EDITING_ID=null;
+form.addEventListener('reset',()=>{setTimeout(()=>{EDITING_ID=null;document.getElementById('editBanner').style.display='none';document.getElementById('submitBtn').textContent='Submit OT Request';buildQuestions();recalc();prefillDefaults();},0);});
+form.addEventListener('submit',async e=>{
+  e.preventDefault();if(!can('create')){toast('Your role cannot create requests.',false);return;}
+  const d=readForm();
+  if(!d.comments||!d.comments.trim()){toast('Comments/Justification is mandatory.',false);form.elements['comments'].focus();return;}
+  const ps=form.elements['otPlannedStartDate'].value,pe=form.elements['otPlannedEndDate'].value;
+  if(!ps){toast('Date - OT Planned (Start) is required.',false);return;}if(!pe){toast('Date - OT Planned (End) is required.',false);return;}if(pe<ps){toast('End date cannot be earlier than Start date.',false);return;}
+  if(d.totalHrsReq>0&&d.addlHrs<=0){toast('Capacity covers demand — OT not required.',false);return;}
+  if(d.otHrsReq<=0){toast('Enter requested OT hours.',false);return;}
+  if(!validateQuestions())return;
+  let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+(useSP()?'SharePoint connection failed. Please try again.':err.message),false);return;}
+  const s=computeScore(d);const risk=computeRisk(d,recs);const now=new Date().toISOString();
+  if(EDITING_ID){
+    const ex=recs.find(r=>r.id===EDITING_ID);if(!ex){toast('Original not found.',false);return;}
+    if(ex.status==='Rejected'){toast('Rejected requests cannot be resubmitted.',false);return;}
+    const up=Object.assign({},ex,d,{score:s.total,riskScore:risk.overall,riskBand:risk.band,status:'Pending',modifyReason:''});
+    up.history=(ex.history||[]).concat([{ts:now,user:USER.name,email:USER.email,action:'Resubmitted',from:ex.status,to:'Pending'}]);
+    try{await dataUpdate(up);}catch(err){toast('Unable to save. '+(useSP()?'SharePoint connection failed. Please try again.':err.message),false);return;}
+    toast('✅ '+EDITING_ID+' resubmitted.',true);EDITING_ID=null;document.getElementById('editBanner').style.display='none';document.getElementById('submitBtn').textContent='Submit OT Request';form.reset();buildQuestions();recalc();prefillDefaults();activateTab(document.querySelector('#tabs button[data-tab="dashboard"]'));return;
+  }
+  const id=newId(recs);
+  const rec=Object.assign({},d,{id,score:s.total,riskScore:risk.overall,riskBand:risk.band,status:'Pending',submittedBy:USER.name,submittedByEmail:USER.email,submittedByUser:USER.username,createdAt:now,actual:null,modifyReason:'',history:[{ts:now,user:USER.name,email:USER.email,action:'Submitted',from:'',to:'Pending'}]});
+  try{await dataAdd(rec);}catch(err){toast('Unable to save request. '+(useSP()?'SharePoint connection failed. Please try again.':err.message),false);return;}
+  toast('✅ '+id+' submitted'+(useSP()?' to SharePoint.':' (local).'),true);form.reset();buildQuestions();recalc();prefillDefaults();activateTab(document.querySelector('#tabs button[data-tab="dashboard"]'));
+});
+
+/* ================= DASHBOARD ================= */
+function inRange(ds,f,t){if(!ds)return true;const d=new Date(ds+'T00:00:00');if(f&&d<new Date(f+'T00:00:00'))return false;if(t&&d>new Date(t+'T23:59:59'))return false;return true;}
+function statusColor(s){return s==='Approved'?'green':s==='Rejected'?'red':s==='Closed'?'grey':s==='To Modify'?'tomod':'amber';}
+function statusPill(s){return `<span class="pill ${statusColor(s)}">${s}</span>`;}
+function kpi(n,l,c){return`<div class="kpi"><div class="n" style="color:${c}">${n}</div><div class="l">${l}</div></div>`;}
+async function renderDashboard(){
+  const load=document.getElementById('dashLoading');load.style.display='block';
+  let recs;try{recs=await dataLoad();}catch(err){load.style.display='none';document.querySelector('#dashTable tbody').innerHTML='';const de=document.getElementById('dashEmpty');de.style.display='block';de.textContent='Unable to load. '+err.message;return;}
+  load.style.display='none';recs.forEach(r=>ensureRisk(r,recs));
+  document.getElementById('scopeNote').textContent=useSP()?('Storage: SharePoint · '+LIST):'Storage: local (this browser)';
+  const q=(document.getElementById('search').value||'').toLowerCase();const fs=document.getElementById('filterStatus').value;const f=document.getElementById('fromDate').value,t=document.getElementById('toDate').value;const mine=document.getElementById('mineOnly').checked;
+  const filtered=recs.filter(r=>{const hay=`${r.account} ${r.pmName} ${r.cell} ${r.id}`.toLowerCase();return(!q||hay.includes(q))&&(!fs||r.status===fs)&&(!mine||emailEq(r.submittedByEmail,USER.email))&&inRange(r.dateRequested,f,t);});
+  const totOT=filtered.reduce((a,r)=>a+nnum(r.otHrsReq),0);const pending=filtered.filter(r=>r.status==='Pending').length;const crit=filtered.filter(r=>r.riskBand==='High'||r.riskBand==='Critical').length;
+  document.getElementById('dashKpis').innerHTML=kpi(filtered.length,'Requests','var(--brand)')+kpi(round1(totOT),'OT Hrs','var(--ink)')+kpi(pending,'Pending','var(--amber)')+kpi(crit,'High/Critical Risk','var(--red)');
+  const tb=document.querySelector('#dashTable tbody');tb.innerHTML='';document.getElementById('dashEmpty').style.display=filtered.length?'none':'block';document.getElementById('dashEmpty').textContent='No requests match.';
+  filtered.slice().reverse().forEach(r=>{const risk=r._risk;tb.insertAdjacentHTML('beforeend',`<tr><td><b>${r.id}</b></td><td>${r.dateRequested||''}</td><td>${r.cell||''}</td><td>${r.account||''}</td><td>${r.pmName||''}</td><td>${r.otType||''}</td><td>${r.totalHrsReq||0}</td><td>${r.capVsAvailPct!=null?r.capVsAvailPct+'%':''}</td><td>${r.addlHrs||0}</td><td><b>${r.otHrsReq||0}</b></td><td><span class="rpill ${risk.band}">${riskEmoji(risk.band)} ${risk.overall}</span></td><td>${statusPill(r.status)}</td><td><button class="btn ghost sm" onclick="viewRec('${r.id}')">View</button></td></tr>`);});
+}
+['search','filterStatus','fromDate','toDate','mineOnly'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',renderDashboard);el.addEventListener('change',renderDashboard);}});
+document.getElementById('clearFilters').onclick=()=>{['search','filterStatus','fromDate','toDate'].forEach(id=>document.getElementById(id).value='');document.getElementById('mineOnly').checked=false;renderDashboard();};
+document.getElementById('refreshDash').onclick=renderDashboard;
+document.getElementById('exportCsv').onclick=exportCsv;
+
+/* ================= VIEW / ACTIONS ================= */
+const modalBg=document.getElementById('modalBg');modalBg.onclick=e=>{if(e.target===modalBg)modalBg.style.display='none';};
+function itemAns(r,it){if(it.type==='util5tbl'){if(r.q4_5!=='Yes')return'';let rows='';for(let i=1;i<=5;i++){const dt=r['q4_5_d'+i]||'-';const up=(r['q4_5_u'+i]!=null&&r['q4_5_u'+i]!=='')?r['q4_5_u'+i]+'%':'-';rows+=`<div><b>${dt}</b>${up}</div>`;}rows+=`<div><b>Overall Average</b>${r.overallUtilizationPercent!=null?Number(r.overallUtilizationPercent).toFixed(2):'-'}%</div>`;return rows;}if(it.type==='catdep')return `<div><b>${it.catLabel}</b>${r[it.catField]||'-'}</div><div><b>${it.detLabel}</b>${r[it.id]||'-'}</div>`;return `<div><b>${it.q}</b>${(r[it.id]!==undefined&&r[it.id]!=='')?r[it.id]:'-'}</div>`;}
+async function viewRec(id){let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}const r=recs.find(x=>x.id===id);if(!r)return;const risk=ensureRisk(r,recs);const rc=recommendOT(r);const warns=earlyWarnings(r,recs);const eff=effectiveness(r);
+  const dims=[['Capacity Risk',risk.capacity],['OTD Risk',risk.otd],['Resource Risk',risk.resource],['Business Criticality',risk.business],['Repeat OT Risk',risk.repeat]];
+  const dimBars=dims.map(([n,v])=>`<div class="bar-row"><span class="lbl">${n}</span><span class="track"><i style="width:${v}%;background:${v>=80?'var(--red)':v>=60?'#c1440e':v>=40?'var(--amber)':'var(--green)'}"></i></span><span class="val">${v}/100</span></div>`).join('');
+  const qHtml=QUESTION_SECTIONS.map(sec=>`<h3>${sec.title}</h3><div class="detail-grid">${sec.items.map(it=>itemAns(r,it)).join('')}</div>`).join('');
+  const histHtml=(r.history&&r.history.length)?`<h3>Audit / History</h3><div class="detail-grid">${r.history.map(h=>`<div><b>${new Date(h.ts).toLocaleString()}</b>${h.action}${h.from?(' ('+h.from+'→'+h.to+')'):''} · ${h.user||''}${h.comment?(' — '+h.comment):''}</div>`).join('')}</div>`:'';
+  const warnHtml=warns.length?`<h3>Warnings</h3><div class="alert-list">${warns.map(w=>`<div class="alert ${w.sev}"><b>${w.sev}</b> ${w.msg}</div>`).join('')}</div>`:'';
+  const effHtml=(r.status==='Closed'&&eff)?`<h3>Planned vs Actual</h3><div class="rec-box"><span class="rl">OT Effectiveness</span><div class="ra">${eff.eff}% · ${eff.cls}</div><div class="detail-grid" style="margin-top:6px"><div><b>Planned OT</b>${eff.pOT}</div><div><b>Actual OT</b>${eff.aOT} (Δ ${eff.otVar})</div><div><b>Backlog Reduction</b>${eff.red} (${eff.redPct}%)</div><div><b>OTD Improvement</b>${eff.otdImp>=0?'+':''}${eff.otdImp}%</div></div></div>`:'';
+  const modB=(r.status==='To Modify'&&r.modifyReason)?`<div class="edit-banner">↩️ Returned for modification: <b>${r.modifyReason}</b></div>`:'';
+  const own=emailEq(r.submittedByEmail,USER.email);let actions='';
+  if(r.status==='Pending'){if(can('review'))actions+=`<button class="btn warn sm" onclick="toModifyPrompt('${r.id}')">To Modify</button>`;if(can('approve')){if(own)actions+=`<span class="muted">You submitted this — approval by another reviewer.</span>`;else actions+=`<button class="btn primary sm" onclick="setStatus('${r.id}','Approved')">✅ Approve</button><button class="btn danger sm" onclick="setStatus('${r.id}','Rejected')">✖ Reject</button>`;}}
+  else if(r.status==='Approved'&&can('close')){actions+=`<button class="btn primary sm" onclick="closeForm('${r.id}')">📥 Record Actuals (Close)</button>`;}
+  else if(r.status==='Rejected'){actions+=`<span class="muted">🔒 Rejected — locked.</span>`;}
+  if(own&&r.status==='To Modify'&&can('create'))actions+=`<button class="btn warn sm" onclick="editRequest('${r.id}')">✏️ Edit &amp; Resubmit</button>`;
+  const planned=(r.otPlannedStartDate&&r.otPlannedEndDate)?(r.otPlannedStartDate+' → '+r.otPlannedEndDate):'-';
+  modalBg.style.display='flex';
+  document.getElementById('modalContent').innerHTML=`<div class="flex-between"><h2 style="margin:0">${r.id} — ${r.account} <span class="rpill ${risk.band}">${riskEmoji(risk.band)} ${risk.band} ${risk.overall}</span> ${statusPill(r.status)}</h2><button class="btn ghost sm" onclick="modalBg.style.display='none'">✕ Close</button></div>
+    <p class="muted">${r.dateRequested} · ${r.otType||''} · by ${r.submittedBy||'-'}</p>${modB}
+    <h3>Multi-Dimensional Risk</h3><div class="bars">${dimBars}</div>
+    <div class="rec-box"><span class="rl">System Recommendation</span><div class="ra">${rc.action}</div><div class="detail-grid" style="margin-top:4px"><div><b>Additional</b>${rc.additional} hrs</div><div><b>Cross-Cell</b>${rc.cross} hrs</div><div><b>Compoff</b>${rc.compoff} hrs</div><div><b>Residual</b>${rc.residual} hrs</div><div><b>Recommended OT</b>${rc.recommendedOT} hrs</div></div><div class="muted" style="margin-top:6px">${rc.reason} · Advisory only.</div></div>
+    ${warnHtml}
+    <h3>Capacity &amp; OT</h3><div class="detail-grid"><div><b>Date - OT Planned</b>${planned}</div><div><b>Total Hrs Required</b>${r.totalHrsReq}</div><div><b>Available Capacity</b>${r.availCap}</div><div><b>Capacity vs Available</b>${r.capVsAvailPct!=null?r.capVsAvailPct+'%':''}</div><div><b>Additional Hrs</b>${r.addlHrs}</div><div><b>OT Hrs (Prod/QC)</b>${r.otHrsReq} (${r.otProd}/${r.otQC})</div><div><b>Comp Off Planned</b>${r.compoffPlanned||0}</div><div><b>Expected OTD Impact</b>${otdDisp(r.q1_4)}</div><div><b>Comments</b>${r.comments||'-'}</div></div>
+    ${qHtml}${effHtml}${histHtml}
+    <div class="row-actions">${actions}</div>`;
+}
+async function setStatus(id,st,comment){if((st==='Approved'||st==='Rejected')&&!can('approve')){toast('Your role cannot approve/reject.',false);return;}let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}const r=recs.find(x=>x.id===id);if(!r)return;if((st==='Approved'||st==='Rejected')&&emailEq(r.submittedByEmail,USER.email)){toast('You cannot approve/reject your own request.',false);return;}if(r.status==='Rejected'){toast('Rejected is terminal.',false);return;}const from=r.status;r.status=st;const now=new Date().toISOString();if(st==='To Modify')r.modifyReason=comment||'';if(st==='Approved'){r.approvedBy=USER.name;r.approvedByEmail=USER.email;r.approvedDate=now;}if(st==='Rejected'){r.rejectedBy=USER.name;r.rejectedDate=now;}r.history=(r.history||[]).concat([{ts:now,user:USER.name,email:USER.email,action:st,from,to:st,comment:comment||''}]);try{await dataUpdate(r);}catch(err){toast('Unable to save. '+(useSP()?'SharePoint connection failed. Please try again.':err.message),false);return;}modalBg.style.display='none';toast(id+' → '+st,true);refreshCurrent();}
+function toModifyPrompt(id){document.getElementById('modalContent').innerHTML=`<h2>Send to Modify?</h2><p class="sub">${id} returns to the applicant. The request ID stays the same.</p><label class="req">Reason</label><textarea id="tm_reason" placeholder="What needs correcting…"></textarea><div class="row-actions"><button class="btn ghost" onclick="viewRec('${id}')">Cancel</button><button class="btn warn" onclick="confirmToModify('${id}')">To Modify</button></div>`;modalBg.style.display='flex';}
+async function confirmToModify(id){const reason=(document.getElementById('tm_reason').value||'').trim();if(!reason){toast('Enter a reason.',false);return;}await setStatus(id,'To Modify',reason);}
+async function editRequest(id){let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}const rec=recs.find(x=>x.id===id);if(!rec)return;if(!(emailEq(rec.submittedByEmail,USER.email)&&rec.status==='To Modify')){toast('You can only edit your own "To Modify" requests.',false);return;}EDITING_ID=id;activateTab(document.querySelector('#tabs button[data-tab="request"]'));buildQuestions();Object.keys(rec).forEach(k=>{const el=form.elements[k];if(!el)return;if(el.length&&el[0]&&el[0].type==='radio'){for(const rr of el)rr.checked=(rr.value===String(rec[k]));}else if(el.type==='checkbox')el.checked=!!rec[k];else el.value=rec[k];});document.querySelectorAll('#questionSections select[data-natcat]').forEach(cs=>{const cid=cs.dataset.natcat;cs.value=rec[cs.name]||'';if(cs._fill)cs._fill(rec[cid]||'');});applyConditionals();if(fieldVal('q4_5')==='Yes')updateUtilDates();recalc();const eb=document.getElementById('editBanner');eb.style.display='block';eb.innerHTML=`✏️ Editing <b>${id}</b> — reason: <b>${rec.modifyReason||'—'}</b>.`;document.getElementById('submitBtn').textContent='Resubmit Request';modalBg.style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
+async function closeForm(id){let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}const r=recs.find(x=>x.id===id);document.getElementById('modalContent').innerHTML=`<h2>Close ${id} — Record Actuals</h2><div class="grid-3"><div><label>Actual OT Hours</label><input type="number" id="a_ot" value="${r.otHrsReq}"></div><div><label>Actual Backlog (hrs)</label><input type="number" id="a_bl" value="${r.q5_3||0}"></div><div><label>Actual OTD %</label><input type="number" id="a_otd" value="${r.q5_6||0}"></div></div><div style="margin-top:12px"><label class="req">Preventive action to avoid repeat OT</label><textarea id="a_cmt"></textarea></div><div class="row-actions"><button class="btn primary" onclick="saveClose('${id}')">Save &amp; Close</button><button class="btn ghost" onclick="viewRec('${id}')">Cancel</button></div>`;}
+async function saveClose(id){const cmt=document.getElementById('a_cmt').value.trim();if(!cmt){toast('Preventive action is mandatory.',false);return;}let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}const r=recs.find(x=>x.id===id);r.actual={otHours:document.getElementById('a_ot').value,backlog:document.getElementById('a_bl').value,otd:document.getElementById('a_otd').value,comment:cmt};const from=r.status;r.status='Closed';r.closedDate=new Date().toISOString();r.history=(r.history||[]).concat([{ts:r.closedDate,user:USER.name,email:USER.email,action:'Closed',from,to:'Closed',comment:cmt}]);try{await dataUpdate(r);}catch(err){toast('Unable to save. '+err.message,false);return;}modalBg.style.display='none';toast(id+' closed.',true);refreshCurrent();}
+function refreshCurrent(){const act=document.querySelector('#tabs button.active');if(act)activateTab(act);}
+
+/* ================= REVIEW ================= */
+async function renderReview(){if(!can('review')){document.getElementById('reviewList').innerHTML='<div class="empty">Your role has no review access.</div>';return;}let recs;try{recs=await dataLoad();}catch(err){document.getElementById('reviewList').innerHTML='<div class="empty">Unable to load. '+err.message+'</div>';return;}recs.forEach(r=>ensureRisk(r,recs));const f=document.getElementById('rFromDate').value,t=document.getElementById('rToDate').value;recs=recs.filter(r=>inRange(r.dateRequested,f,t));const showP=document.getElementById('showProcessed').checked;const pend=recs.filter(r=>r.status==='Pending');const toMod=recs.filter(r=>r.status==='To Modify');const proc=recs.filter(r=>['Approved','Rejected','Closed'].includes(r.status));const wrap=document.getElementById('reviewList');if(!pend.length&&!toMod.length&&!(showP&&proc.length)){wrap.innerHTML='<div class="empty">No requests in this range.</div>';return;}let html=`<h3 style="margin:8px 0">Pending (${pend.length})</h3>${pend.map(r=>reviewRow(r,'pending')).join('')||'<p class="muted">None</p>'}`;html+=`<h3 style="margin:14px 0 8px">To Modify (${toMod.length})</h3>${toMod.map(r=>reviewRow(r,'tomod')).join('')||'<p class="muted">None</p>'}`;if(showP)html+=`<h3 style="margin:14px 0 8px">Processed (${proc.length})</h3>${proc.map(r=>reviewRow(r,'proc')).join('')||'<p class="muted">None</p>'}`;wrap.innerHTML=html;}
+function reviewRow(r,mode){const risk=r._risk;const rc=recommendOT(r);const own=emailEq(r.submittedByEmail,USER.email);const metrics=`<div class="ri-metrics"><span><b>Capacity:</b> ${r.capVsAvailPct!=null?r.capVsAvailPct+'%':'-'}</span><span><b>OTD Risk:</b> ${otdDisp(r.q1_4)}</span><span><b>5-Day Util:</b> ${r.overallUtilizationPercent!=null?r.overallUtilizationPercent+'%':'—'}</span><span><b>Repeat OT:</b> ${risk.rep&&risk.rep.level!=='none'?(risk.rep.ordinal+' / 30d'):'No'}</span><span><b>Cross-Cell:</b> ${(nnum(r.crossProd)+nnum(r.crossQC))} hrs</span><span><b>Compoff:</b> ${nnum(r.compoffPlanned)} hrs</span></div>`;const intel=`<div class="rev-intel"><div><b>${r.account}</b> · ${r.id} · <b>${r.otHrsReq||0} OT hrs</b> · ${r.otType||''} <span class="rpill ${risk.band}">${riskEmoji(risk.band)} ${risk.band} ${risk.overall}</span> ${statusPill(r.status)}</div>${metrics}<div class="rec-box"><span class="rl">System Recommendation</span><div class="ra">${rc.action}${rc.recommendedOT>0?(' — Approve '+rc.recommendedOT+' hrs OT'):''}</div><div class="muted" style="margin-top:2px">${rc.reason}</div></div></div>`;let acts=`<button class="btn ghost sm" onclick="viewRec('${r.id}')">View</button>`;if(mode==='pending'){acts+=`<button class="btn warn sm" onclick="toModifyPrompt('${r.id}')">To Modify</button>`;if(can('approve')&&!own)acts+=`<button class="btn primary sm" onclick="setStatus('${r.id}','Approved')">Approve</button><button class="btn danger sm" onclick="setStatus('${r.id}','Rejected')">Reject</button>`;}else if(mode==='tomod')acts+=`<span class="muted">Awaiting applicant</span>`;return `<div class="rev-row">${intel}<div class="acts">${acts}</div></div>`;}
+['rFromDate','rToDate'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('change',renderReview);});
+document.getElementById('showProcessed').addEventListener('change',renderReview);
+document.getElementById('rClear').onclick=()=>{document.getElementById('rFromDate').value='';document.getElementById('rToDate').value='';document.getElementById('showProcessed').checked=false;renderReview();};
+
+/* ================= OSL ================= */
+async function buildOsl(){if(!can('osl')){document.getElementById('oslSummary').innerHTML='<p class="muted">Your role has no OSL access.</p>';return[];}let recs;try{recs=await dataLoad();}catch(err){document.getElementById('oslSummary').innerHTML='<p class="muted">Unable to load. '+err.message+'</p>';return[];}recs.forEach(r=>ensureRisk(r,recs));recs=recs.filter(r=>r.status==='Approved');const f=document.getElementById('oFromDate').value,t=document.getElementById('oToDate').value;recs=recs.filter(r=>inRange(r.dateRequested,f,t));if(!recs.length){document.getElementById('oslSummary').innerHTML='<p class="muted">No Approved requests in this range.</p>';return[];}let rows='',tot=0;recs.forEach(r=>{tot+=nnum(r.otHrsReq);rows+=`<tr><td>${r.dateRequested}</td><td>${r.cell}</td><td>${r.account}</td><td>${r.pmName||''}</td><td><b>${r.otHrsReq}</b></td><td>${otdDisp(r.q1_4)} OTD</td><td><span class="rpill ${r.riskBand||'Low'}">${r.riskBand||'-'}</span></td></tr>`;});document.getElementById('oslSummary').innerHTML=`<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Date</th><th>Cell</th><th>Account</th><th>PM</th><th>Approved OT Hrs</th><th>Impact</th><th>Risk</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:800"><td colspan="4">TOTAL APPROVED OT</td><td>${round1(tot)} hrs</td><td colspan="2"></td></tr></tfoot></table></div>`;return recs;}
+document.getElementById('oslBtn').onclick=buildOsl;
+document.getElementById('oslCsv').onclick=async()=>{const recs=await buildOsl();if(!recs.length)return;const head=['Date','Cell','Account','PM','Approved OT Hrs','Risk'];downloadCsv('OSL_Summary.csv',[head.join(',')].concat(recs.map(r=>[r.dateRequested,r.cell,r.account,r.pmName,r.otHrsReq,r.riskBand].map(csvCell).join(','))).join('\n'));};
+
+/* ================= ANALYTICS ================= */
+async function renderAnalytics(){if(!can('analytics')){document.getElementById('anaKpis').innerHTML='<p class="muted">Your role has no analytics access.</p>';return;}let recs;try{recs=await dataLoad();}catch(err){document.getElementById('anaKpis').innerHTML='<p class="muted">Unable to load. '+err.message+'</p>';return;}recs.forEach(r=>ensureRisk(r,recs));const total=recs.length;const otReq=recs.reduce((a,r)=>a+nnum(r.otHrsReq),0);const appr=recs.filter(r=>r.status==='Approved'||r.status==='Closed').length;const rej=recs.filter(r=>r.status==='Rejected').length;const decided=recs.filter(r=>['Approved','Rejected','To Modify','Closed'].includes(r.status)).length;const closed=recs.filter(r=>r.status==='Closed'&&r.actual);const effs=closed.map(effectiveness).filter(Boolean);const avgEff=effs.length?Math.round(effs.reduce((a,e)=>a+e.eff,0)/effs.length):0;const hiC=recs.filter(r=>r.riskBand==='High'||r.riskBand==='Critical').length;document.getElementById('anaKpis').innerHTML=kpi(total,'OT Requests','var(--brand)')+kpi(round1(otReq),'OT Hrs','var(--ink)')+kpi(decided?Math.round(appr/decided*100)+'%':'0%','Approval Rate','var(--green)')+kpi(decided?Math.round(rej/decided*100)+'%':'0%','Rejection Rate','var(--red)')+kpi(hiC,'High/Critical Risk','var(--red)')+kpi(avgEff+'%','OT Effectiveness','var(--green)');
+  barChart('byAccount',groupSum(recs,'account'));barChart('byCell',groupSum(recs,'cell'));barChart('byNature',groupSum(recs,'natureOfIncrease'));const rb={Low:0,Moderate:0,High:0,Critical:0};recs.forEach(r=>{rb[r.riskBand]=(rb[r.riskBand]||0)+1;});riskBar('byRiskBand',rb);
+  document.getElementById('plannedVsActual').innerHTML=closed.length?`<table class="dt"><thead><tr><th>Req ID</th><th>Account</th><th>Planned OT</th><th>Actual OT</th><th>Δ</th><th>Backlog Reduction</th><th>Effectiveness</th></tr></thead><tbody>${closed.map(r=>{const e=effectiveness(r);return `<tr><td>${r.id}</td><td>${r.account}</td><td>${e.pOT}</td><td>${e.aOT}</td><td>${e.otVar>=0?'+':''}${e.otVar}</td><td>${e.red} (${e.redPct}%)</td><td><span class="pill ${e.eff>=60?'green':e.eff>=40?'amber':'red'}">${e.eff}% ${e.cls}</span></td></tr>`;}).join('')}</tbody></table>`:'<p class="muted">No closed requests with actuals yet.</p>';
+  const alerts=[];recs.filter(r=>r.status==='Pending').forEach(r=>{earlyWarnings(r,recs).forEach(w=>{if(w.sev==='Critical'||w.sev==='High')alerts.push({sev:w.sev,msg:r.account+' ('+r.id+'): '+w.msg});});});const ac=document.getElementById('anaAlertsCard'),al=document.getElementById('anaAlerts');if(alerts.length){ac.style.display='block';al.innerHTML=alerts.slice(0,12).map(a=>`<div class="alert ${a.sev}"><b>${a.sev}</b> ${a.msg}</div>`).join('');}else{ac.style.display='none';al.innerHTML='';}}
+document.getElementById('anaRefresh').onclick=renderAnalytics;
+function groupSum(recs,key){const o={};recs.forEach(r=>{o[r[key]||'—']=(o[r[key]||'—']||0)+nnum(r.otHrsReq);});return o;}
+function barChart(id,obj){const el=document.getElementById(id);if(!el)return;const max=Math.max(1,...Object.values(obj));const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);el.innerHTML=e.length?e.map(([k,v])=>`<div class="bar-row"><span class="lbl">${k}</span><span class="track"><i style="width:${v/max*100}%"></i></span><span class="val">${round1(v)} hrs</span></div>`).join(''):'<p class="muted">No data yet.</p>';}
+function riskBar(id,obj){const el=document.getElementById(id);if(!el)return;const order=['Low','Moderate','High','Critical'];const col={Low:'var(--green)',Moderate:'var(--amber)',High:'#c1440e',Critical:'var(--red)'};const max=Math.max(1,...order.map(k=>obj[k]||0));el.innerHTML=order.map(k=>`<div class="bar-row"><span class="lbl">${k}</span><span class="track"><i style="width:${(obj[k]||0)/max*100}%;background:${col[k]}"></i></span><span class="val">${obj[k]||0}</span></div>`).join('');}
+
+/* ================= CSV ================= */
+function csvCell(v){return`"${(v??'').toString().replace(/"/g,'""')}"`;}
+function downloadCsv(name,csv){try{const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();toast('CSV exported.',true);}catch(e){toast('Export blocked.',false);}}
+async function exportCsv(){let recs;try{recs=await dataLoad();}catch(err){toast('Unable to load. '+err.message,false);return;}recs.forEach(r=>ensureRisk(r,recs));if(!recs.length){toast('No data to export.',false);return;}const head=['Req ID','Date','OT Planned Start','OT Planned End','Cell','Account','PM','Submitted By','OT Type','Status','Risk Score','Risk Band','Total Hrs','Available Capacity','Cap vs Available %','Additional Hrs','OT Hrs','Compoff Hrs','Nature Category','Nature','OTD Impact','Approved By','Closed Date','Comments'];const map=r=>[r.id,r.dateRequested,r.otPlannedStartDate,r.otPlannedEndDate,r.cell,r.account,r.pmName,r.submittedBy,r.otType,r.status,r.riskScore,r.riskBand,r.totalHrsReq,r.availCap,(r.capVsAvailPct!=null?r.capVsAvailPct+'%':''),r.addlHrs,r.otHrsReq,r.compoffPlanned,r.natureOfIncreaseCategory,r.natureOfIncrease,otdDisp(r.q1_4),r.approvedBy,r.closedDate,r.comments];downloadCsv('OT_Requests.csv',[head.map(csvCell).join(',')].concat(recs.map(r=>map(r).map(csvCell).join(','))).join('\n'));}
+
+/* ================= SETTINGS ================= */
+function loadSettings(){const hc=document.getElementById('hostCtx');const sp=useSP();hc.innerHTML=sp?`<b style="color:#0e5c3a">Hosting: SharePoint</b> · Web: <code>${webUrl()}</code> · Signed in as <b>${USER.name}</b> (${ROLE_LABEL[USER.role]}) · Storage: <b>${LIST}</b> list.`:`<b style="color:#b25e00">Hosting: ${location.protocol==='file:'?'Local file (file://)':'Non-SharePoint origin (e.g. GitHub/iframe)'}</b> · Running in <b>DEMO</b> mode (data saved to this browser only). To store data in SharePoint, host this file inside SharePoint (Site Assets) so it runs same-origin.`;}
+document.getElementById('cfgTest').onclick=async()=>{const st=document.getElementById('cfgStatus');st.textContent='Testing…';if(!useSP()){st.textContent='⚠ Not in SharePoint (Demo). Host the file in Site Assets to connect to '+LIST+'.';return;}try{const items=await dataLoad();st.textContent='✅ Connected — '+items.length+' items in '+LIST+'.';}catch(e){st.textContent='❌ '+e.message+' (ensure the '+LIST+' list exists and you have access).';}};
+
+/* ================= DEMO DATA ================= */
+function demoRecords(){function base(date,acct,otP,otQ,st,nat){return {dateRequested:date,otPlannedStartDate:date,otPlannedEndDate:date,cell:'Cell-1',account:acct,pmName:'Pandian Nagarajan',submittedBy:'Pandian Nagarajan',submittedByEmail:'pandian@sgxgraphics.com',otType:'Weekend OT',backlogCount:16,backlogHrs:450.3,day1Count:136,day1Hrs:377.6,day2Count:87,day2Hrs:701.2,day3Count:95,day3Hrs:260.4,futureCount:46,futureHrs:662.3,prodPerDay:160,qcPerDay:80,crossProd:8,crossQC:16,otProd:otP,otQC:otQ,prodCompoff:20,qcCompoff:10,comments:'Weekend support.',q1_1:'Clear backlog',q1_2:'TAT miss',q1_3:40,q1_5:'Nestlé risk',q2_1:'Yes',q2_2:'Late bookings',q2_f:300,natureOfIncreaseCategory:'Capacity Related',natureOfIncrease:nat,q3_1:'Yes',q3_2:'Yes',q3_3:'No',q3_3_why:'Busy',q3_5:'No',q3_5_why:'Busy',q3_6:'No',q3_6_why:'Busy',q3_7:'Yes',q3_10:'Limited',q4_prodCount:24,q4_qcCount:8,q4_1:5,q4_2:4,q4_4:'Yes',q4_4_count:3,q4_4_names:'Suresh',q4_5:'Yes',q4_5_u1:92,q4_5_u2:88,q4_5_u3:95,q4_5_u4:91,q4_5_u5:86,q5_2:1500,q5_3:700,q5_5:200,q5_6:95,q6_2:'Yes',q6_3count:30,declaration:true,status:st,approvedBy:st!=='Pending'?'Rahul Ravindran':''};}
+  return [base('2026-08-05','Conagra',60,40,'Approved','QC Capacity Constraint'),base('2026-08-12','Conagra',50,30,'Approved','QC Capacity Constraint'),base('2026-08-24','Conagra',200,100,'Pending','QC Capacity Constraint'),Object.assign(base('2026-08-19','MARS',12,12,'Closed','QC Capacity Constraint'),{account:'MARS',otType:'Weekday OT',actual:{otHours:20,backlog:60,otd:96,comment:'Cross-cell reduced OT.'},closedDate:'2026-08-22T10:00:00Z'})];}
+function computeDemo(d){d.totalJobCount=nnum(d.backlogCount)+nnum(d.day1Count)+nnum(d.day2Count)+nnum(d.day3Count)+nnum(d.futureCount);d.totalHrsReq=round1(nnum(d.backlogHrs)+nnum(d.day1Hrs)+nnum(d.day2Hrs)+nnum(d.day3Hrs)+nnum(d.futureHrs));d.prod3day=round1(nnum(d.prodPerDay)*4);d.qc3day=round1(nnum(d.qcPerDay)*4);d.availCap=round1(d.prod3day+d.qc3day+nnum(d.crossProd)+nnum(d.crossQC));d.capVsAvailPct=d.availCap>0?+(d.totalHrsReq/d.availCap*100).toFixed(2):0;d.addlHrs=round1(d.totalHrsReq-d.availCap);d.otHrsReq=round1(nnum(d.otProd)+nnum(d.otQC));d.compoffPlanned=round1(nnum(d.prodCompoff)+nnum(d.qcCompoff));d.q1_4=pctStr(nnum(d.q1_3),d.totalJobCount);const cap=nnum(d.q4_prodCount)+nnum(d.q4_qcCount);d.q4_1pct=(cap>0?nnum(d.q4_1)/cap*100:0).toFixed(2)+'%';d.q4_2pct=(cap>0?nnum(d.q4_2)/cap*100:0).toFixed(2)+'%';d.overallUtilizationPercent=+(((nnum(d.q4_5_u1)+nnum(d.q4_5_u2)+nnum(d.q4_5_u3)+nnum(d.q4_5_u4)+nnum(d.q4_5_u5))/5)).toFixed(2);const risk=computeRisk(d,[]);d.riskScore=risk.overall;d.riskBand=risk.band;d.score=computeScore(d).total;return d;}
+document.getElementById('seedDemoBtn').onclick=async()=>{if(useSP()){toast('Demo loader is for local mode. In SharePoint, submit real requests.',false);return;}let recs=localArr();demoRecords().forEach(b=>{const d=computeDemo(b);d.id=newId(recs);d.createdAt=new Date(b.dateRequested+'T09:00:00').toISOString();d.history=[{ts:d.createdAt,user:d.submittedBy,email:d.submittedByEmail,action:'Submitted',from:'',to:'Pending'}];if(d.status==='Approved'||d.status==='Closed')d.history.push({ts:d.createdAt,user:'Rahul Ravindran',action:'Approved',from:'Pending',to:'Approved'});if(d.status==='Closed')d.history.push({ts:d.closedDate,user:'Rahul Ravindran',action:'Closed',from:'Approved',to:'Closed',comment:d.actual.comment});recs.push(d);});localSave(recs);document.getElementById('seedStatus').textContent='✅ Demo data loaded ('+demoRecords().length+' requests).';toast('Demo data loaded.',true);};
+document.getElementById('clearDemoBtn').onclick=()=>{if(!safeConfirm('Clear local data?'))return;localSave([]);document.getElementById('seedStatus').textContent='🗑 Local data cleared.';toast('Cleared.',true);};
+</script>
+</body>
+</html>
