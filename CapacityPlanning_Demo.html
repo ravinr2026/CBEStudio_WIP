@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity Planning – Demo</title>
+<style>
+  :root{
+    --brand:#005A74; --gold:#CCAE35; --ink:#151C20;
+    --bleed:#D64545; --surplus:#2E9E5B; --balanced:#E0A83B;
+    --bg:#F4F6F8; --card:#FFFFFF; --line:#E2E8EC;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:18px;}
+  .header{background:var(--brand);border-radius:12px;padding:16px 22px;display:flex;
+          justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .header h1{color:var(--gold);font-size:20px;}
+  .header p{color:#CFE3EA;font-size:12.5px;margin-top:3px;}
+  .stamp{color:#fff;font-size:12px;text-align:right;line-height:1.5;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 15px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#6B7A82;}
+  .kpi .value{font-size:24px;font-weight:700;margin-top:4px;color:var(--brand);}
+  .kpi .sub{font-size:10.5px;color:#8A98A0;margin-top:2px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:14px;color:var(--brand);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .card h2 span.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);display:inline-block;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;padding:8px 10px;background:#F0F4F6;color:#516066;font-weight:600;
+     font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;display:inline-block;}
+  .b-bleed{background:var(--bleed);} .b-surplus{background:var(--surplus);} .b-balanced{background:var(--balanced);}
+  .gap-neg{color:var(--bleed);font-weight:700;} .gap-pos{color:var(--surplus);font-weight:700;}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px;}
+  .controls .fld{display:flex;flex-direction:column;gap:4px;}
+  .controls label{font-size:11px;color:#6B7A82;font-weight:600;}
+  .controls input,.controls select{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;}
+  .btn{background:var(--brand);color:#fff;border:none;padding:8px 16px;border-radius:7px;
+       font-size:12.5px;font-weight:600;cursor:pointer;}
+  .btn:hover{background:#00475c;}
+  .suggest{background:#FBF6E6;border:1px solid #EBDCA6;border-radius:10px;padding:12px 14px;
+           font-size:12.5px;color:#6B5A17;margin-top:10px;line-height:1.6;}
+  .suggest b{color:#8A6D0B;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#6B7A82;margin-top:10px;}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .foot{margin-top:10px;font-size:11px;color:#93A1A8;text-align:center;}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Capacity Planning — Demo App</h1>
+      <p>Dummy data · built to test HTML + &lt;iframe&gt; embedding in SharePoint</p>
+    </div>
+    <div class="stamp">
+      <div id="clock">Loading…</div>
+      <div>Status: <b style="color:var(--gold)">DEMO / SAMPLE DATA</b></div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">Installed HC</div><div class="value">34</div><div class="sub">3 cells</div></div>
+    <div class="kpi"><div class="label">Net Available HC</div><div class="value">29</div><div class="sub">after leave</div></div>
+    <div class="kpi"><div class="label">Shrinkage %</div><div class="value" style="color:var(--balanced)">12.1%</div><div class="sub">target ≤ 10%</div></div>
+    <div class="kpi"><div class="label">Studio Gap (h)</div><div class="value" id="studioGap" style="color:var(--bleed)">-20.6</div><div class="sub">demand vs capacity</div></div>
+    <div class="kpi"><div class="label">OT Requested</div><div class="value">98h</div><div class="sub">pending</div></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="dot"></span>Cell-wise Capacity vs Demand — Morning Status</h2>
+    <table id="capTable">
+      <thead>
+        <tr><th>Cell / Account</th><th>Avail (h)</th><th>Demand (h)</th><th>Gap (h)</th><th>Status</th></tr>
+      </thead>
+      <tbody><!-- rows injected by JS --></tbody>
+    </table>
+    <div class="legend">
+      <span><i style="background:var(--bleed)"></i>Bleeding (Gap &lt; 0)</span>
+      <span><i style="background:var(--balanced)"></i>Balanced (±8h)</span>
+      <span><i style="background:var(--surplus)"></i>Surplus (Gap &gt; +8h)</span>
+    </div>
+    <div class="suggest" id="suggestBox"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="dot"></span>Quick What-if — add / adjust a cell</h2>
+    <div class="controls">
+      <div class="fld"><label>Cell / Account</label><input id="inName" placeholder="e.g. Cell 4 - Retail"></div>
+      <div class="fld"><label>Available (h)</label><input id="inAvail" type="number" value="40"></div>
+      <div class="fld"><label>Demand (h)</label><input id="inDemand" type="number" value="55"></div>
+      <button class="btn" onclick="addRow()">Add / Update</button>
+      <button class="btn" style="background:#7A8A90" onclick="resetData()">Reset demo</button>
+    </div>
+    <p style="font-size:11px;color:#8A98A0;margin-top:6px;">
+      This proves the app is fully interactive inside the iframe — numbers, RAG status &amp; suggestions recalc instantly.
+    </p>
+  </div>
+
+  <div class="foot">Capacity Planning Demo · sample data only · replace with live SharePoint List / Power BI data on deployment</div>
+
+<script>
+  // ---- Dummy dataset ----
+  var defaultData = [
+    {name:"Cell 1 — NPPC",  avail:93.5, demand:140.6},
+    {name:"Cell 2 — Pharma",avail:132.0,demand:128.5},
+    {name:"Cell 3 — Brand", avail:88.0, demand:65.0}
+  ];
+  var data = JSON.parse(JSON.stringify(defaultData));
+
+  function statusOf(gap){
+    if(gap < 0)  return {cls:"b-bleed",   txt:"🔴 Bleeding"};
+    if(gap > 8)  return {cls:"b-surplus", txt:"🟢 Surplus"};
+    return             {cls:"b-balanced",txt:"🟡 Balanced"};
+  }
+
+  function render(){
+    var tb = document.querySelector("#capTable tbody");
+    tb.innerHTML = "";
+    var totGap = 0, bleed = null, surplus = null;
+    data.forEach(function(r){
+      var gap = +(r.avail - r.demand).toFixed(1);
+      totGap += gap;
+      if(gap < 0 && (!bleed || gap < bleed.gap)) bleed = {name:r.name, gap:gap};
+      if(gap > 8 && (!surplus || gap > surplus.gap)) surplus = {name:r.name, gap:gap};
+      var s = statusOf(gap);
+      var cls = gap < 0 ? "gap-neg" : "gap-pos";
+      tb.innerHTML += "<tr><td>"+r.name+"</td><td>"+r.avail+"</td><td>"+r.demand+
+        "</td><td class='"+cls+"'>"+(gap>0?"+":"")+gap+"</td><td><span class='pill "+s.cls+"'>"+s.txt+"</span></td></tr>";
+    });
+    document.getElementById("studioGap").textContent = (totGap>0?"+":"")+totGap.toFixed(1);
+    document.getElementById("studioGap").style.color = totGap<0 ? "var(--bleed)" : "var(--surplus)";
+
+    // Smart suggestion
+    var box = document.getElementById("suggestBox");
+    if(bleed && surplus){
+      var cover = Math.min(Math.abs(bleed.gap), surplus.gap);
+      var pct = Math.round(cover/Math.abs(bleed.gap)*100);
+      box.innerHTML = "💡 <b>Smart Redeployment:</b> "+surplus.name+" has <b>+"+surplus.gap+
+        "h surplus</b> → redeploy to <b>"+bleed.name+"</b> deficit of <b>"+bleed.gap+
+        "h</b>. Covers ~"+pct+"% of the gap. Raise OT only for the remainder.";
+    } else if(bleed){
+      box.innerHTML = "⚠️ <b>"+bleed.name+"</b> is bleeding ("+bleed.gap+
+        "h) with <b>no internal surplus</b> available → cross-site support or OT required.";
+    } else {
+      box.innerHTML = "✅ No bleeding cells this morning — studio is balanced or in surplus.";
+    }
+  }
+
+  function addRow(){
+    var name = document.getElementById("inName").value.trim();
+    var avail = parseFloat(document.getElementById("inAvail").value)||0;
+    var demand = parseFloat(document.getElementById("inDemand").value)||0;
+    if(!name){ alert("Enter a cell/account name"); return; }
+    var ex = data.find(function(d){return d.name.toLowerCase()===name.toLowerCase();});
+    if(ex){ ex.avail=avail; ex.demand=demand; } else { data.push({name:name,avail:avail,demand:demand}); }
+    render();
+  }
+  function resetData(){ data = JSON.parse(JSON.stringify(defaultData)); render(); }
+
+  function tick(){
+    var d = new Date();
+    document.getElementById("clock").textContent =
+      "As of " + d.toLocaleString("en-IN",{weekday:"short",hour:"2-digit",minute:"2-digit"});
+  }
+  tick(); setInterval(tick,30000);
+  render();
+</script>
+</body>
+</html>
